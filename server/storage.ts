@@ -86,6 +86,7 @@ export class MemStorage implements IStorage {
       id: crypto.randomUUID(),
       ...category,
       imageUrl: category.imageUrl ?? null,
+      enabled: category.enabled ?? true,
       createdAt: new Date(),
     };
     this.categories.set(newCategory.id, newCategory);
