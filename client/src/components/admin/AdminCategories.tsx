@@ -171,16 +171,19 @@ export default function AdminCategories() {
       setCategoryUploading(false);
     }
 
-    const data = {
+    const dataToSend: any = {
       name,
       enabled,
-      imageUrl: imageUrl || null,
     };
 
+    if (imageUrl || categoryImageMode === 'url' || categoryImageMode === 'upload') {
+      dataToSend.imageUrl = imageUrl || null;
+    }
+
     if (editingCategory) {
-      updateCategoryMutation.mutate({ id: editingCategory.id, data });
+      updateCategoryMutation.mutate({ id: editingCategory.id, data: dataToSend });
     } else {
-      createCategoryMutation.mutate(data);
+      createCategoryMutation.mutate(dataToSend);
     }
   };
 
@@ -209,18 +212,21 @@ export default function AdminCategories() {
       setProductUploading(false);
     }
 
-    const data = {
+    const dataToSend: any = {
       name,
       price,
       measurementType,
       categoryId: selectedCategoryForProduct || editingProduct?.categoryId || '',
-      imageUrl: imageUrl || null,
     };
 
+    if (imageUrl || productImageMode === 'url' || productImageMode === 'upload') {
+      dataToSend.imageUrl = imageUrl || null;
+    }
+
     if (editingProduct) {
-      updateProductMutation.mutate({ id: editingProduct.id, data });
+      updateProductMutation.mutate({ id: editingProduct.id, data: dataToSend });
     } else {
-      createProductMutation.mutate(data);
+      createProductMutation.mutate(dataToSend);
     }
   };
 
@@ -237,24 +243,26 @@ export default function AdminCategories() {
 
   const openCategoryDialog = (category: Category | null) => {
     setEditingCategory(category);
+    setCategoryImageFile(null);
+    setCategoryImageMode('url');
     if (category?.imageUrl) {
       setCategoryImageUrl(category.imageUrl);
     } else {
       setCategoryImageUrl('');
     }
-    resetCategoryImageState();
     setIsCategoryDialogOpen(true);
   };
 
   const openProductDialog = (product: Product | null, categoryId: string | null) => {
     setEditingProduct(product);
     setSelectedCategoryForProduct(categoryId);
+    setProductImageFile(null);
+    setProductImageMode('url');
     if (product?.imageUrl) {
       setProductImageUrl(product.imageUrl);
     } else {
       setProductImageUrl('');
     }
-    resetProductImageState();
     setIsProductDialogOpen(true);
   };
 

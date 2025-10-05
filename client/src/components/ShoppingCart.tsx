@@ -2,11 +2,11 @@ import { useState } from "react";
 import { X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Product } from "@shared/schema";
+import type { Product, SiteSettings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,15 +44,37 @@ export default function ShoppingCart({
   const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  const { data: settings } = useQuery<SiteSettings>({
+    queryKey: ['/api/settings'],
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => apiRequest('/api/orders', { method: 'POST', body: data }),
-    onSuccess: () => {
+    onSuccess: (_, orderData) => {
       toast({ 
         title: "¡Pedido realizado!", 
         description: "Tu pedido ha sido registrado exitosamente" 
       });
+      
       setIsCheckoutDialogOpen(false);
       onCheckout();
+      
+      const whatsappNumber = settings?.contactPhone?.replace(/[^0-9]/g, '') || '';
+      
+      if (whatsappNumber) {
+        const whatsappMessage = createWhatsAppMessage(orderData);
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        setTimeout(() => {
+          window.open(whatsappUrl, '_blank');
+        }, 1000);
+      } else {
+        toast({
+          title: "Advertencia",
+          description: "No se pudo redirigir a WhatsApp. El número de contacto no está configurado.",
+          variant: "destructive"
+        });
+      }
     },
     onError: () => {
       toast({ 
@@ -124,6 +146,46 @@ export default function ShoppingCart({
   };
 
   const total = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+
+  const createWhatsAppMessage = (orderData: any) => {
+    let message = `🛒 *NUEVO PEDIDO* 🛒\n\n`;
+    message += `👤 *Cliente:* ${orderData.customerName}\n`;
+    message += `📱 *Teléfono:* ${orderData.customerPhone}\n`;
+    
+    if (orderData.customerEmail) {
+      message += `📧 *Email:* ${orderData.customerEmail}\n`;
+    }
+    
+    if (orderData.customerAddress) {
+      message += `📍 *Dirección:* ${orderData.customerAddress}\n`;
+    }
+    
+    message += `\n📦 *PRODUCTOS:*\n`;
+    message += `━━━━━━━━━━━━━━━━\n`;
+    
+    items.forEach((item, index) => {
+      const quantity = item.measurementType === 'weight' 
+        ? formatQuantity(item)
+        : `${item.quantity} ${item.quantity === 1 ? 'unidad' : 'unidades'}`;
+      
+      const itemTotal = calculateItemPrice(item);
+      message += `\n${index + 1}. *${item.name}*\n`;
+      message += `   Cantidad: ${quantity}\n`;
+      message += `   Precio: $${parseFloat(item.price).toFixed(2)}${item.measurementType === 'weight' ? '/kg' : ''}\n`;
+      message += `   Subtotal: $${itemTotal.toFixed(2)}\n`;
+    });
+    
+    message += `\n━━━━━━━━━━━━━━━━\n`;
+    message += `💰 *TOTAL: $${total.toFixed(2)}*\n`;
+    
+    if (orderData.notes) {
+      message += `\n📝 *Notas:* ${orderData.notes}\n`;
+    }
+    
+    message += `\n¡Gracias por tu pedido! 😊`;
+    
+    return message;
+  };
 
   if (!isOpen) return null;
 
