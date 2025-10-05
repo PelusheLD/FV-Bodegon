@@ -1,6 +1,16 @@
-import { X, Minus, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface CartItem {
   id: string;
@@ -8,6 +18,7 @@ interface CartItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  measurementType: 'unit' | 'weight';
 }
 
 interface ShoppingCartProps {
@@ -27,7 +38,42 @@ export default function ShoppingCart({
   onRemoveItem,
   onCheckout,
 }: ShoppingCartProps) {
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const [editWeight, setEditWeight] = useState("");
+
+  const handleEditWeight = (item: CartItem) => {
+    setEditingItem(item);
+    setEditWeight(item.quantity.toString());
+  };
+
+  const handleConfirmEdit = () => {
+    if (editingItem) {
+      const newWeight = parseFloat(editWeight);
+      if (newWeight > 0) {
+        onUpdateQuantity(editingItem.id, newWeight);
+      }
+      setEditingItem(null);
+    }
+  };
+
+  const formatQuantity = (item: CartItem) => {
+    if (item.measurementType === 'weight') {
+      if (item.quantity >= 1000) {
+        return `${(item.quantity / 1000).toFixed(2)} kg`;
+      }
+      return `${item.quantity} g`;
+    }
+    return item.quantity.toString();
+  };
+
+  const calculateItemPrice = (item: CartItem) => {
+    if (item.measurementType === 'weight') {
+      return (item.quantity / 1000) * item.price;
+    }
+    return item.price * item.quantity;
+  };
+
+  const total = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
 
   if (!isOpen) return null;
 
@@ -81,41 +127,73 @@ export default function ShoppingCart({
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium line-clamp-2 mb-1">{item.name}</h3>
                       <p className="text-sm font-semibold text-primary mb-2">
-                        ${item.price.toFixed(2)}
+                        ${item.price.toFixed(2)}{item.measurementType === 'weight' ? '/kg' : ''}
                       </p>
                       
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-8 w-8"
-                          onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                          data-testid={`button-decrease-${item.id}`}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium" data-testid={`text-quantity-${item.id}`}>
-                          {item.quantity}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-8 w-8"
-                          onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                          data-testid={`button-increase-${item.id}`}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 ml-auto"
-                          onClick={() => onRemoveItem(item.id)}
-                          data-testid={`button-remove-${item.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                      {item.measurementType === 'unit' ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                            data-testid={`button-decrease-${item.id}`}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium" data-testid={`text-quantity-${item.id}`}>
+                            {item.quantity}
+                          </span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            data-testid={`button-increase-${item.id}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 ml-auto"
+                            onClick={() => onRemoveItem(item.id)}
+                            data-testid={`button-remove-${item.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 px-3 py-1 bg-muted rounded-md">
+                            <span className="text-sm font-medium" data-testid={`text-quantity-${item.id}`}>
+                              {formatQuantity(item)}
+                            </span>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => handleEditWeight(item)}
+                            data-testid={`button-edit-weight-${item.id}`}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 ml-auto"
+                            onClick={() => onRemoveItem(item.id)}
+                            data-testid={`button-remove-${item.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Subtotal: ${calculateItemPrice(item).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -141,6 +219,89 @@ export default function ShoppingCart({
           </>
         )}
       </div>
+
+      <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar cantidad</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="font-medium mb-2">{editingItem.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  Precio: ${editingItem.price.toFixed(2)}/kg
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-weight-input">Cantidad en gramos</Label>
+                <Input
+                  id="edit-weight-input"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editWeight}
+                  onChange={(e) => setEditWeight(e.target.value)}
+                  data-testid="input-edit-weight"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {parseFloat(editWeight) >= 1000 
+                    ? `${(parseFloat(editWeight) / 1000).toFixed(2)} kg` 
+                    : `${editWeight} gramos`}
+                  {' - '}
+                  Precio total: ${((parseFloat(editWeight) / 1000) * editingItem.price).toFixed(2)}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditWeight("250")}
+                >
+                  250g
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditWeight("500")}
+                >
+                  500g
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditWeight("1000")}
+                >
+                  1kg
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditWeight("2000")}
+                >
+                  2kg
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setEditingItem(null)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmEdit}
+              data-testid="button-confirm-edit"
+            >
+              Actualizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

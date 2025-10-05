@@ -27,6 +27,7 @@ interface Product {
   price: number;
   categoryId: string;
   imageUrl?: string;
+  measurementType: 'unit' | 'weight';
 }
 
 export default function AdminCategories() {
@@ -37,9 +38,9 @@ export default function AdminCategories() {
   ]);
 
   const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1' },
-    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1' },
-    { id: '3', name: 'Shampoo Herbal', price: 5.99, categoryId: '2' },
+    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1', measurementType: 'unit' },
+    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1', measurementType: 'unit' },
+    { id: '3', name: 'Shampoo Herbal', price: 5.99, categoryId: '2', measurementType: 'unit' },
   ]);
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -94,13 +95,20 @@ export default function AdminCategories() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const price = parseFloat(formData.get('price') as string);
+    const measurementType = formData.get('measurementType') as 'unit' | 'weight';
     const categoryId = selectedCategoryForProduct || '';
 
     if (editingProduct) {
       setProducts(prev =>
         prev.map(prod =>
           prod.id === editingProduct.id 
-            ? { ...prod, name, price, imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : prod.imageUrl } 
+            ? { 
+                ...prod, 
+                name, 
+                price,
+                measurementType,
+                imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : prod.imageUrl 
+              } 
             : prod
         )
       );
@@ -111,6 +119,7 @@ export default function AdminCategories() {
         name, 
         price, 
         categoryId,
+        measurementType,
         imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : undefined
       }]);
       toast({ title: "Producto creado" });
@@ -273,7 +282,15 @@ export default function AdminCategories() {
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{product.name}</div>
-                              <div className="text-sm text-primary font-semibold">${product.price.toFixed(2)}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-primary font-semibold">
+                                  ${product.price.toFixed(2)}
+                                  {product.measurementType === 'weight' ? '/kg' : ''}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {product.measurementType === 'weight' ? '(Por peso)' : '(Por unidad)'}
+                                </span>
+                              </div>
                             </div>
                           </div>
 
@@ -387,6 +404,24 @@ export default function AdminCategories() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="product-measurement">Tipo de medida</Label>
+                <select
+                  id="product-measurement"
+                  name="measurementType"
+                  defaultValue={editingProduct?.measurementType || 'unit'}
+                  required
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  data-testid="select-measurement-type"
+                >
+                  <option value="unit">Por unidad</option>
+                  <option value="weight">Por peso (kg/gramos)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Productos por unidad: bebidas, jabones. Por peso: carnes, frutas.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="product-price">Precio</Label>
                 <Input
                   id="product-price"
@@ -398,6 +433,9 @@ export default function AdminCategories() {
                   required
                   data-testid="input-product-price"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Si es por peso, indica el precio por kilogramo
+                </p>
               </div>
 
               <div className="space-y-2">

@@ -13,6 +13,7 @@ interface CartItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  measurementType: 'unit' | 'weight';
 }
 
 interface Product {
@@ -21,6 +22,7 @@ interface Product {
   price: number;
   imageUrl?: string;
   categoryId: string;
+  measurementType: 'unit' | 'weight';
 }
 
 export default function HomePage() {
@@ -31,38 +33,42 @@ export default function HomePage() {
 
   // TODO: Remove mock data - replace with real data from Supabase
   const mockProducts: Product[] = [
-    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1' },
-    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1' },
-    { id: '3', name: 'Agua Mineral 1.5L', price: 1.50, categoryId: '1' },
-    { id: '4', name: 'Jugo de Naranja 1L', price: 2.75, categoryId: '1' },
-    { id: '5', name: 'Shampoo Herbal 400ml', price: 5.99, categoryId: '2' },
-    { id: '6', name: 'Jabón Antibacterial', price: 2.50, categoryId: '2' },
-    { id: '7', name: 'Bistec de Res 1kg', price: 12.50, categoryId: '3' },
-    { id: '8', name: 'Pechuga de Pollo 1kg', price: 8.75, categoryId: '3' },
-    { id: '9', name: 'Filete de Salmón', price: 15.00, categoryId: '4' },
-    { id: '10', name: 'Camarones 500g', price: 11.50, categoryId: '4' },
+    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1', measurementType: 'unit' },
+    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1', measurementType: 'unit' },
+    { id: '3', name: 'Agua Mineral 1.5L', price: 1.50, categoryId: '1', measurementType: 'unit' },
+    { id: '4', name: 'Jugo de Naranja 1L', price: 2.75, categoryId: '1', measurementType: 'unit' },
+    { id: '5', name: 'Shampoo Herbal 400ml', price: 5.99, categoryId: '2', measurementType: 'unit' },
+    { id: '6', name: 'Jabón Antibacterial', price: 2.50, categoryId: '2', measurementType: 'unit' },
+    { id: '7', name: 'Bistec de Res', price: 12.50, categoryId: '3', measurementType: 'weight' },
+    { id: '8', name: 'Pechuga de Pollo', price: 8.75, categoryId: '3', measurementType: 'weight' },
+    { id: '9', name: 'Filete de Salmón', price: 15.00, categoryId: '4', measurementType: 'weight' },
+    { id: '10', name: 'Camarones', price: 11.50, categoryId: '4', measurementType: 'weight' },
   ];
 
   const handleCategorySelect = (categoryId: string, categoryName: string) => {
     setSelectedCategory({ id: categoryId, name: categoryName });
   };
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, quantity: number) => {
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: product.measurementType === 'unit' ? item.quantity + quantity : quantity }
             : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity }];
     });
+
+    const quantityText = product.measurementType === 'weight' 
+      ? quantity >= 1000 ? `${(quantity / 1000).toFixed(2)} kg` : `${quantity} g`
+      : `${quantity} unidad${quantity > 1 ? 'es' : ''}`;
 
     toast({
       title: "Producto agregado",
-      description: `${product.name} se agregó al carrito`,
+      description: `${product.name} (${quantityText}) se agregó al carrito`,
       duration: 2000,
     });
   };
@@ -97,8 +103,15 @@ export default function HomePage() {
     });
   };
 
-  const cartTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const calculateItemPrice = (item: CartItem) => {
+    if (item.measurementType === 'weight') {
+      return (item.quantity / 1000) * item.price;
+    }
+    return item.price * item.quantity;
+  };
+
+  const cartTotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+  const cartCount = cartItems.length;
 
   const categoryProducts = selectedCategory
     ? mockProducts.filter(p => p.categoryId === selectedCategory.id)

@@ -8,13 +8,14 @@ interface Product {
   price: number;
   imageUrl?: string;
   categoryId: string;
+  measurementType: 'unit' | 'weight';
 }
 
 interface ProductGridProps {
   categoryName: string;
   products: Product[];
   onBack: () => void;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, quantity: number) => void;
 }
 
 export default function ProductGrid({ categoryName, products, onBack, onAddToCart }: ProductGridProps) {
@@ -50,7 +51,8 @@ export default function ProductGrid({ categoryName, products, onBack, onAddToCar
                 name={product.name}
                 price={product.price}
                 imageUrl={product.imageUrl}
-                onAddToCart={() => onAddToCart(product)}
+                measurementType={product.measurementType}
+                onAddToCart={(quantity) => onAddToCart(product, quantity)}
               />
             ))}
           </div>
