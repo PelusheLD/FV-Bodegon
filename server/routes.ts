@@ -3,8 +3,21 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertAdminUserSchema, insertSiteSettingsSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import { z } from "zod";
+import { upload } from "./upload";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/upload", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No se proporcionó ninguna imagen" });
+      }
+
+      const imageUrl = `/uploads/${req.file.filename}`;
+      res.json({ url: imageUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Error al subir la imagen" });
+    }
+  });
   // Categories
   app.get("/api/categories", async (_req, res) => {
     try {
