@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import type { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,12 +13,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import type { Product } from "@shared/schema";
+
 interface ProductCardProps {
   id: string;
   name: string;
-  price: number;
-  imageUrl?: string;
-  measurementType: 'unit' | 'weight';
+  price: string;
+  imageUrl?: string | null;
+  measurementType: string;
   onAddToCart: (quantity: number) => void;
 }
 
@@ -71,7 +74,7 @@ export default function ProductCard({
               {name}
             </h3>
             <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${id}`}>
-              ${price.toFixed(2)}{measurementType === 'weight' ? '/kg' : ''}
+              ${parseFloat(price).toFixed(2)}{measurementType === 'weight' ? '/kg' : ''}
             </p>
             {measurementType === 'weight' && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -99,7 +102,7 @@ export default function ProductCard({
             <div>
               <h3 className="font-medium mb-2">{name}</h3>
               <p className="text-sm text-muted-foreground">
-                Precio: ${price.toFixed(2)}/kg
+                Precio: ${parseFloat(price).toFixed(2)}/kg
               </p>
             </div>
 
@@ -119,7 +122,7 @@ export default function ProductCard({
                   ? `${(parseFloat(weight) / 1000).toFixed(2)} kg` 
                   : `${weight} gramos`}
                 {' - '}
-                Precio total: ${((parseFloat(weight) / 1000) * price).toFixed(2)}
+                Precio total: ${((parseFloat(weight) / 1000) * parseFloat(price)).toFixed(2)}
               </p>
             </div>
 

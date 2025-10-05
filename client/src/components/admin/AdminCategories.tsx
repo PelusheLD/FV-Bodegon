@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,35 +14,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-
-interface Category {
-  id: string;
-  name: string;
-  imageUrl?: string;
-  enabled: boolean;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  categoryId: string;
-  imageUrl?: string;
-  measurementType: 'unit' | 'weight';
-}
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Category, Product } from "@shared/schema";
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState<Category[]>([
-    { id: '1', name: 'Bebidas', enabled: true },
-    { id: '2', name: 'Salud y cuidado personal', enabled: true },
-    { id: '3', name: 'Carnes, charcutería, aves, cerdo', enabled: false },
-  ]);
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+  });
 
-  const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1', measurementType: 'unit' },
-    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1', measurementType: 'unit' },
-    { id: '3', name: 'Shampoo Herbal', price: 5.99, categoryId: '2', measurementType: 'unit' },
-  ]);
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+  });
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -53,6 +36,69 @@ export default function AdminCategories() {
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
 
   const { toast } = useToast();
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: any) => apiRequest('/api/categories', { method: 'POST', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: "Categoría creada" });
+      setIsCategoryDialogOpen(false);
+      setEditingCategory(null);
+      setCategoryImageFile(null);
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => 
+      apiRequest(`/api/categories/${id}`, { method: 'PUT', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: "Categoría actualizada" });
+      setIsCategoryDialogOpen(false);
+      setEditingCategory(null);
+      setCategoryImageFile(null);
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest(`/api/categories/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({ title: "Categoría eliminada" });
+    },
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (data: any) => apiRequest('/api/products', { method: 'POST', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({ title: "Producto creado" });
+      setIsProductDialogOpen(false);
+      setEditingProduct(null);
+      setProductImageFile(null);
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+      apiRequest(`/api/products/${id}`, { method: 'PUT', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({ title: "Producto actualizado" });
+      setIsProductDialogOpen(false);
+      setEditingProduct(null);
+      setProductImageFile(null);
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest(`/api/products/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({ title: "Producto eliminado" });
+    },
+  });
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -70,86 +116,55 @@ export default function AdminCategories() {
     const name = formData.get('name') as string;
     const enabled = formData.get('enabled') === 'on';
 
-    if (editingCategory) {
-      setCategories(prev =>
-        prev.map(cat => (cat.id === editingCategory.id ? { ...cat, name, enabled } : cat))
-      );
-      toast({ title: "Categoría actualizada" });
-    } else {
-      setCategories(prev => [...prev, { 
-        id: Date.now().toString(), 
-        name, 
-        enabled,
-        imageUrl: categoryImageFile ? URL.createObjectURL(categoryImageFile) : undefined 
-      }]);
-      toast({ title: "Categoría creada" });
-    }
+    const data = {
+      name,
+      enabled,
+      imageUrl: categoryImageFile ? URL.createObjectURL(categoryImageFile) : editingCategory?.imageUrl,
+    };
 
-    setIsCategoryDialogOpen(false);
-    setEditingCategory(null);
-    setCategoryImageFile(null);
+    if (editingCategory) {
+      updateCategoryMutation.mutate({ id: editingCategory.id, data });
+    } else {
+      createCategoryMutation.mutate(data);
+    }
   };
 
   const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const price = parseFloat(formData.get('price') as string);
+    const price = formData.get('price') as string;
     const measurementType = formData.get('measurementType') as 'unit' | 'weight';
-    const categoryId = selectedCategoryForProduct || '';
+
+    const data = {
+      name,
+      price,
+      measurementType,
+      categoryId: selectedCategoryForProduct || editingProduct?.categoryId || '',
+      imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : editingProduct?.imageUrl,
+    };
 
     if (editingProduct) {
-      setProducts(prev =>
-        prev.map(prod =>
-          prod.id === editingProduct.id 
-            ? { 
-                ...prod, 
-                name, 
-                price,
-                measurementType,
-                imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : prod.imageUrl 
-              } 
-            : prod
-        )
-      );
-      toast({ title: "Producto actualizado" });
+      updateProductMutation.mutate({ id: editingProduct.id, data });
     } else {
-      setProducts(prev => [...prev, { 
-        id: Date.now().toString(), 
-        name, 
-        price, 
-        categoryId,
-        measurementType,
-        imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : undefined
-      }]);
-      toast({ title: "Producto creado" });
+      createProductMutation.mutate(data);
     }
-
-    setIsProductDialogOpen(false);
-    setEditingProduct(null);
-    setProductImageFile(null);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
-    setProducts(prev => prev.filter(prod => prod.categoryId !== id));
-    toast({ title: "Categoría eliminada" });
-  };
-
-  const handleDeleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(prod => prod.id !== id));
-    toast({ title: "Producto eliminado" });
-  };
-
-  const toggleCategoryEnabled = (id: string) => {
-    setCategories(prev =>
-      prev.map(cat => (cat.id === id ? { ...cat, enabled: !cat.enabled } : cat))
-    );
+  const toggleCategoryEnabled = (category: Category) => {
+    updateCategoryMutation.mutate({
+      id: category.id,
+      data: { ...category, enabled: !category.enabled },
+    });
   };
 
   const getCategoryProducts = (categoryId: string) => {
     return products.filter(p => p.categoryId === categoryId);
   };
+
+  if (categoriesLoading) {
+    return <div className="p-8 text-center">Cargando...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -175,7 +190,7 @@ export default function AdminCategories() {
           return (
             <Card key={category.id}>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Button
                       size="icon"
@@ -209,7 +224,7 @@ export default function AdminCategories() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={category.enabled}
-                        onCheckedChange={() => toggleCategoryEnabled(category.id)}
+                        onCheckedChange={() => toggleCategoryEnabled(category)}
                         data-testid={`switch-category-${category.id}`}
                       />
                       <span className="text-sm text-muted-foreground">
@@ -236,7 +251,7 @@ export default function AdminCategories() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleDeleteCategory(category.id)}
+                      onClick={() => deleteCategoryMutation.mutate(category.id)}
                       data-testid={`button-delete-category-${category.id}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -247,7 +262,7 @@ export default function AdminCategories() {
 
               {isExpanded && (
                 <CardContent className="pt-0 border-t">
-                  <div className="flex items-center justify-between mb-4 mt-4">
+                  <div className="flex items-center justify-between mb-4 mt-4 flex-wrap gap-2">
                     <h3 className="font-semibold">Productos</h3>
                     <Button
                       size="sm"
@@ -272,7 +287,7 @@ export default function AdminCategories() {
                       {categoryProducts.map(product => (
                         <div
                           key={product.id}
-                          className="flex items-center justify-between p-3 rounded-md border hover-elevate"
+                          className="flex items-center justify-between p-3 rounded-md border hover-elevate flex-wrap gap-2"
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {product.imageUrl && (
@@ -282,9 +297,9 @@ export default function AdminCategories() {
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{product.name}</div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm text-primary font-semibold">
-                                  ${product.price.toFixed(2)}
+                                  ${parseFloat(product.price).toFixed(2)}
                                   {product.measurementType === 'weight' ? '/kg' : ''}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
@@ -310,7 +325,7 @@ export default function AdminCategories() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => handleDeleteProduct(product.id)}
+                              onClick={() => deleteProductMutation.mutate(product.id)}
                               data-testid={`button-delete-product-${product.id}`}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -375,8 +390,8 @@ export default function AdminCategories() {
               <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" data-testid="button-save-category">
-                Guardar
+              <Button type="submit" data-testid="button-save-category" disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}>
+                {createCategoryMutation.isPending || updateCategoryMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
           </form>
@@ -453,8 +468,8 @@ export default function AdminCategories() {
               <Button type="button" variant="outline" onClick={() => setIsProductDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" data-testid="button-save-product">
-                Guardar
+              <Button type="submit" data-testid="button-save-product" disabled={createProductMutation.isPending || updateProductMutation.isPending}>
+                {createProductMutation.isPending || updateProductMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
           </form>

@@ -1,15 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "./ProductCard";
+import type { Product } from "@shared/schema";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl?: string;
-  categoryId: string;
-  measurementType: 'unit' | 'weight';
-}
+import type { Product } from "@shared/schema";
 
 interface ProductGridProps {
   categoryName: string;

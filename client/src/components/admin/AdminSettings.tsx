@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,37 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-
-interface SiteSettings {
-  siteName: string;
-  siteDescription: string;
-  contactPhone: string;
-  contactEmail: string;
-  contactAddress: string;
-  facebookUrl: string;
-  instagramUrl: string;
-  twitterUrl: string;
-}
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { SiteSettings } from "@shared/schema";
 
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<SiteSettings>({
-    siteName: 'FV BODEGONES',
-    siteDescription: 'Tu bodega de confianza para productos de consumo diario',
-    contactPhone: '+1 (555) 123-4567',
-    contactEmail: 'contacto@fvbodegones.com',
-    contactAddress: 'Calle Principal #123, Ciudad',
-    facebookUrl: '#',
-    instagramUrl: '#',
-    twitterUrl: '#',
+  const { data: settings, isLoading } = useQuery<SiteSettings>({
+    queryKey: ['/api/settings'],
   });
 
   const { toast } = useToast();
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (data: any) => apiRequest('/api/settings', { method: 'PUT', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({ 
+        title: "Configuración guardada", 
+        description: "Los cambios se verán reflejados en el sitio web" 
+      });
+    },
+  });
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const newSettings: SiteSettings = {
+    const data = {
       siteName: formData.get('siteName') as string,
       siteDescription: formData.get('siteDescription') as string,
       contactPhone: formData.get('contactPhone') as string,
@@ -47,12 +42,12 @@ export default function AdminSettings() {
       twitterUrl: formData.get('twitterUrl') as string,
     };
 
-    setSettings(newSettings);
-    toast({ 
-      title: "Configuración guardada", 
-      description: "Los cambios se verán reflejados en el sitio web" 
-    });
+    updateSettingsMutation.mutate(data);
   };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Cargando...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -73,7 +68,7 @@ export default function AdminSettings() {
               <Input
                 id="siteName"
                 name="siteName"
-                defaultValue={settings.siteName}
+                defaultValue={settings?.siteName}
                 required
                 data-testid="input-site-name"
               />
@@ -84,7 +79,7 @@ export default function AdminSettings() {
               <Textarea
                 id="siteDescription"
                 name="siteDescription"
-                defaultValue={settings.siteDescription}
+                defaultValue={settings?.siteDescription}
                 required
                 data-testid="input-site-description"
               />
@@ -104,7 +99,7 @@ export default function AdminSettings() {
                 id="contactPhone"
                 name="contactPhone"
                 type="tel"
-                defaultValue={settings.contactPhone}
+                defaultValue={settings?.contactPhone}
                 required
                 data-testid="input-contact-phone"
               />
@@ -116,7 +111,7 @@ export default function AdminSettings() {
                 id="contactEmail"
                 name="contactEmail"
                 type="email"
-                defaultValue={settings.contactEmail}
+                defaultValue={settings?.contactEmail}
                 required
                 data-testid="input-contact-email"
               />
@@ -127,7 +122,7 @@ export default function AdminSettings() {
               <Input
                 id="contactAddress"
                 name="contactAddress"
-                defaultValue={settings.contactAddress}
+                defaultValue={settings?.contactAddress}
                 required
                 data-testid="input-contact-address"
               />
@@ -148,7 +143,7 @@ export default function AdminSettings() {
                 name="facebookUrl"
                 type="url"
                 placeholder="https://facebook.com/..."
-                defaultValue={settings.facebookUrl}
+                defaultValue={settings?.facebookUrl || ''}
                 data-testid="input-facebook-url"
               />
             </div>
@@ -160,7 +155,7 @@ export default function AdminSettings() {
                 name="instagramUrl"
                 type="url"
                 placeholder="https://instagram.com/..."
-                defaultValue={settings.instagramUrl}
+                defaultValue={settings?.instagramUrl || ''}
                 data-testid="input-instagram-url"
               />
             </div>
@@ -172,7 +167,7 @@ export default function AdminSettings() {
                 name="twitterUrl"
                 type="url"
                 placeholder="https://twitter.com/..."
-                defaultValue={settings.twitterUrl}
+                defaultValue={settings?.twitterUrl || ''}
                 data-testid="input-twitter-url"
               />
             </div>
@@ -180,9 +175,9 @@ export default function AdminSettings() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" size="lg" data-testid="button-save-settings">
+          <Button type="submit" size="lg" data-testid="button-save-settings" disabled={updateSettingsMutation.isPending}>
             <Save className="h-4 w-4 mr-2" />
-            Guardar Cambios
+            {updateSettingsMutation.isPending ? "Guardando..." : "Guardar Cambios"}
           </Button>
         </div>
       </form>

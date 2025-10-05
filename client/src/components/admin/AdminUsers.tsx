@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,29 +14,48 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { AdminUser } from "@shared/schema";
 
-interface AdminUser {
-  id: string;
-  username: string;
-  email: string;
-  role: 'admin' | 'superadmin';
-  createdAt: string;
-}
+type AdminUserResponse = Omit<AdminUser, 'password'>;
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<AdminUser[]>([
-    {
-      id: '1',
-      username: 'admin',
-      email: 'admin@fvbodegones.com',
-      role: 'superadmin',
-      createdAt: '2024-01-01',
-    },
-  ]);
+  const { data: users = [], isLoading } = useQuery<AdminUserResponse[]>({
+    queryKey: ['/api/admin/users'],
+  });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editingUser, setEditingUser] = useState<AdminUserResponse | null>(null);
   const { toast } = useToast();
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: any) => apiRequest('/api/admin/users', { method: 'POST', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: "Usuario creado" });
+      setIsDialogOpen(false);
+      setEditingUser(null);
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+      apiRequest(`/api/admin/users/${id}`, { method: 'PUT', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: "Usuario actualizado" });
+      setIsDialogOpen(false);
+      setEditingUser(null);
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest(`/api/admin/users/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: "Usuario eliminado" });
+    },
+  });
 
   const handleSaveUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,39 +65,24 @@ export default function AdminUsers() {
     const password = formData.get('password') as string;
     const role = formData.get('role') as 'admin' | 'superadmin';
 
+    const data = editingUser
+      ? { username, email, role }
+      : { username, email, password, role };
+
     if (editingUser) {
-      setUsers(prev =>
-        prev.map(user =>
-          user.id === editingUser.id ? { ...user, username, email, role } : user
-        )
-      );
-      toast({ title: "Usuario actualizado" });
+      updateUserMutation.mutate({ id: editingUser.id, data });
     } else {
-      setUsers(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          username,
-          email,
-          role,
-          createdAt: new Date().toISOString().split('T')[0],
-        },
-      ]);
-      toast({ title: "Usuario creado", description: `Contraseña: ${password}` });
+      createUserMutation.mutate(data);
     }
-
-    setIsDialogOpen(false);
-    setEditingUser(null);
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(prev => prev.filter(user => user.id !== id));
-    toast({ title: "Usuario eliminado" });
-  };
+  if (isLoading) {
+    return <div className="p-8 text-center">Cargando...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-display font-semibold">Usuarios Administrativos</h2>
           <p className="text-muted-foreground">Gestiona los usuarios que pueden acceder al panel</p>
@@ -98,9 +103,9 @@ export default function AdminUsers() {
         {users.map(user => (
           <Card key={user.id}>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <CardTitle>{user.username}</CardTitle>
                     <Badge variant={user.role === 'superadmin' ? 'default' : 'secondary'}>
                       {user.role === 'superadmin' ? (
@@ -119,7 +124,7 @@ export default function AdminUsers() {
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -135,7 +140,7 @@ export default function AdminUsers() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleDeleteUser(user.id)}
+                      onClick={() => deleteUserMutation.mutate(user.id)}
                       data-testid={`button-delete-user-${user.id}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -212,8 +217,8 @@ export default function AdminUsers() {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" data-testid="button-save-user">
-                Guardar
+              <Button type="submit" data-testid="button-save-user" disabled={createUserMutation.isPending || updateUserMutation.isPending}>
+                {createUserMutation.isPending || updateUserMutation.isPending ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
           </form>

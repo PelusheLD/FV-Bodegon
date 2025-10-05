@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import CategoryGrid from "@/components/CategoryGrid";
@@ -6,23 +7,10 @@ import ProductGrid from "@/components/ProductGrid";
 import ShoppingCart from "@/components/ShoppingCart";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import type { Category, Product } from "@shared/schema";
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
+interface CartItem extends Product {
   quantity: number;
-  imageUrl?: string;
-  measurementType: 'unit' | 'weight';
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl?: string;
-  categoryId: string;
-  measurementType: 'unit' | 'weight';
 }
 
 export default function HomePage() {
@@ -31,19 +19,15 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
 
-  // TODO: Remove mock data - replace with real data from Supabase
-  const mockProducts: Product[] = [
-    { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1', measurementType: 'unit' },
-    { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1', measurementType: 'unit' },
-    { id: '3', name: 'Agua Mineral 1.5L', price: 1.50, categoryId: '1', measurementType: 'unit' },
-    { id: '4', name: 'Jugo de Naranja 1L', price: 2.75, categoryId: '1', measurementType: 'unit' },
-    { id: '5', name: 'Shampoo Herbal 400ml', price: 5.99, categoryId: '2', measurementType: 'unit' },
-    { id: '6', name: 'Jabón Antibacterial', price: 2.50, categoryId: '2', measurementType: 'unit' },
-    { id: '7', name: 'Bistec de Res', price: 12.50, categoryId: '3', measurementType: 'weight' },
-    { id: '8', name: 'Pechuga de Pollo', price: 8.75, categoryId: '3', measurementType: 'weight' },
-    { id: '9', name: 'Filete de Salmón', price: 15.00, categoryId: '4', measurementType: 'weight' },
-    { id: '10', name: 'Camarones', price: 11.50, categoryId: '4', measurementType: 'weight' },
-  ];
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+  });
+
+  const { data: allProducts = [] } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+  });
+
+  const enabledCategories = categories.filter(c => c.enabled);
 
   const handleCategorySelect = (categoryId: string, categoryName: string) => {
     setSelectedCategory({ id: categoryId, name: categoryName });
@@ -62,6 +46,7 @@ export default function HomePage() {
       return [...prev, { ...product, quantity }];
     });
 
+    const price = parseFloat(product.price);
     const quantityText = product.measurementType === 'weight' 
       ? quantity >= 1000 ? `${(quantity / 1000).toFixed(2)} kg` : `${quantity} g`
       : `${quantity} unidad${quantity > 1 ? 'es' : ''}`;
@@ -104,17 +89,18 @@ export default function HomePage() {
   };
 
   const calculateItemPrice = (item: CartItem) => {
+    const price = parseFloat(item.price);
     if (item.measurementType === 'weight') {
-      return (item.quantity / 1000) * item.price;
+      return (item.quantity / 1000) * price;
     }
-    return item.price * item.quantity;
+    return price * item.quantity;
   };
 
   const cartTotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
   const cartCount = cartItems.length;
 
   const categoryProducts = selectedCategory
-    ? mockProducts.filter(p => p.categoryId === selectedCategory.id)
+    ? allProducts.filter(p => p.categoryId === selectedCategory.id)
     : [];
 
   return (
@@ -129,7 +115,7 @@ export default function HomePage() {
         {!selectedCategory ? (
           <>
             <Hero onSearch={handleSearch} />
-            <CategoryGrid onCategorySelect={handleCategorySelect} />
+            <CategoryGrid categories={enabledCategories} onCategorySelect={handleCategorySelect} />
           </>
         ) : (
           <ProductGrid

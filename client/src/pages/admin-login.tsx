@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -20,23 +21,26 @@ export default function AdminLoginPage({ onLogin }: AdminLoginProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Replace with real authentication via Supabase
-    setTimeout(() => {
-      if (username === "admin" && password === "admin123") {
-        toast({
-          title: "Inicio de sesión exitoso",
-          description: "Bienvenido al panel administrativo",
-        });
-        onLogin();
-      } else {
-        toast({
-          title: "Error de autenticación",
-          description: "Usuario o contraseña incorrectos",
-          variant: "destructive",
-        });
-      }
+    try {
+      await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: { username, password },
+      });
+
+      toast({
+        title: "Inicio de sesión exitoso",
+        description: "Bienvenido al panel administrativo",
+      });
+      onLogin();
+    } catch (error) {
+      toast({
+        title: "Error de autenticación",
+        description: "Usuario o contraseña incorrectos",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

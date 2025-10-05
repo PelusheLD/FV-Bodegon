@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Product } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,13 +13,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
+import type { Product } from "@shared/schema";
+
+interface CartItem extends Product {
   quantity: number;
-  imageUrl?: string;
-  measurementType: 'unit' | 'weight';
 }
 
 interface ShoppingCartProps {
@@ -67,10 +65,11 @@ export default function ShoppingCart({
   };
 
   const calculateItemPrice = (item: CartItem) => {
+    const price = parseFloat(item.price);
     if (item.measurementType === 'weight') {
-      return (item.quantity / 1000) * item.price;
+      return (item.quantity / 1000) * price;
     }
-    return item.price * item.quantity;
+    return price * item.quantity;
   };
 
   const total = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
@@ -127,7 +126,7 @@ export default function ShoppingCart({
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium line-clamp-2 mb-1">{item.name}</h3>
                       <p className="text-sm font-semibold text-primary mb-2">
-                        ${item.price.toFixed(2)}{item.measurementType === 'weight' ? '/kg' : ''}
+                        ${parseFloat(item.price).toFixed(2)}{item.measurementType === 'weight' ? '/kg' : ''}
                       </p>
                       
                       {item.measurementType === 'unit' ? (
@@ -230,7 +229,7 @@ export default function ShoppingCart({
               <div>
                 <h3 className="font-medium mb-2">{editingItem.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Precio: ${editingItem.price.toFixed(2)}/kg
+                  Precio: ${parseFloat(editingItem.price).toFixed(2)}/kg
                 </p>
               </div>
 
@@ -250,7 +249,7 @@ export default function ShoppingCart({
                     ? `${(parseFloat(editWeight) / 1000).toFixed(2)} kg` 
                     : `${editWeight} gramos`}
                   {' - '}
-                  Precio total: ${((parseFloat(editWeight) / 1000) * editingItem.price).toFixed(2)}
+                  Precio total: ${((parseFloat(editWeight) / 1000) * parseFloat(editingItem.price)).toFixed(2)}
                 </p>
               </div>
 
