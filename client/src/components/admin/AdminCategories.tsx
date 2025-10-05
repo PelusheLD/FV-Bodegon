@@ -32,8 +32,6 @@ export default function AdminCategories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedCategoryForProduct, setSelectedCategoryForProduct] = useState<string | null>(null);
-  const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
 
   const { toast } = useToast();
 
@@ -44,7 +42,6 @@ export default function AdminCategories() {
       toast({ title: "Categoría creada" });
       setIsCategoryDialogOpen(false);
       setEditingCategory(null);
-      setCategoryImageFile(null);
     },
   });
 
@@ -56,7 +53,6 @@ export default function AdminCategories() {
       toast({ title: "Categoría actualizada" });
       setIsCategoryDialogOpen(false);
       setEditingCategory(null);
-      setCategoryImageFile(null);
     },
   });
 
@@ -76,7 +72,6 @@ export default function AdminCategories() {
       toast({ title: "Producto creado" });
       setIsProductDialogOpen(false);
       setEditingProduct(null);
-      setProductImageFile(null);
     },
   });
 
@@ -88,7 +83,6 @@ export default function AdminCategories() {
       toast({ title: "Producto actualizado" });
       setIsProductDialogOpen(false);
       setEditingProduct(null);
-      setProductImageFile(null);
     },
   });
 
@@ -114,12 +108,13 @@ export default function AdminCategories() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
+    const imageUrl = formData.get('imageUrl') as string;
     const enabled = formData.get('enabled') === 'on';
 
     const data = {
       name,
       enabled,
-      imageUrl: categoryImageFile ? URL.createObjectURL(categoryImageFile) : editingCategory?.imageUrl,
+      imageUrl: imageUrl || null,
     };
 
     if (editingCategory) {
@@ -134,6 +129,7 @@ export default function AdminCategories() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const price = formData.get('price') as string;
+    const imageUrl = formData.get('imageUrl') as string;
     const measurementType = formData.get('measurementType') as 'unit' | 'weight';
 
     const data = {
@@ -141,7 +137,7 @@ export default function AdminCategories() {
       price,
       measurementType,
       categoryId: selectedCategoryForProduct || editingProduct?.categoryId || '',
-      imageUrl: productImageFile ? URL.createObjectURL(productImageFile) : editingProduct?.imageUrl,
+      imageUrl: imageUrl || null,
     };
 
     if (editingProduct) {
@@ -363,16 +359,17 @@ export default function AdminCategories() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category-image">Imagen de la Categoría</Label>
+                <Label htmlFor="category-image-url">URL de la Imagen</Label>
                 <Input
-                  id="category-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setCategoryImageFile(e.target.files?.[0] || null)}
-                  data-testid="input-category-image"
+                  id="category-image-url"
+                  name="imageUrl"
+                  type="url"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  defaultValue={editingCategory?.imageUrl || ''}
+                  data-testid="input-category-image-url"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Esta imagen se mostrará en la página principal
+                  Pega la URL de una imagen (puedes usar servicios como imgur.com)
                 </p>
               </div>
 
@@ -454,14 +451,18 @@ export default function AdminCategories() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="product-image">Imagen del Producto</Label>
+                <Label htmlFor="product-image-url">URL de la Imagen</Label>
                 <Input
-                  id="product-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setProductImageFile(e.target.files?.[0] || null)}
-                  data-testid="input-product-image"
+                  id="product-image-url"
+                  name="imageUrl"
+                  type="url"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  defaultValue={editingProduct?.imageUrl || ''}
+                  data-testid="input-product-image-url"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Pega la URL de una imagen del producto
+                </p>
               </div>
             </div>
             <DialogFooter>
