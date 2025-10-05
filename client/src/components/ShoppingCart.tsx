@@ -13,8 +13,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import type { Product } from "@shared/schema";
-
 interface CartItem extends Product {
   quantity: number;
 }

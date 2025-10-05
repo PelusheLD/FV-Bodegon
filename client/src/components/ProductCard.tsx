@@ -13,8 +13,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import type { Product } from "@shared/schema";
-
 interface ProductCardProps {
   id: string;
   name: string;

@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "./ProductCard";
 import type { Product } from "@shared/schema";
 
-import type { Product } from "@shared/schema";
-
 interface ProductGridProps {
   categoryName: string;
   products: Product[];
