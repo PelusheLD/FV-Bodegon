@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ interface Product {
   imageUrl?: string;
 }
 
-export default function AdminPage({ onBack }: { onBack: () => void }) {
+export default function AdminPage({ onLogout }: { onLogout: () => void }) {
   const [categories, setCategories] = useState<Category[]>([
     { id: '1', name: 'Bebidas', icon: 'Coffee' },
     { id: '2', name: 'Salud y cuidado personal', icon: 'Heart' },
@@ -101,11 +101,16 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onBack} data-testid="button-back-admin">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center justify-between">
             <h1 className="font-display font-bold text-2xl">Panel Administrativo</h1>
+            <Button
+              variant="outline"
+              onClick={onLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Cerrar Sesión
+            </Button>
           </div>
         </div>
       </header>

@@ -29,6 +29,7 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
 
+  // TODO: Remove mock data - replace with real data from Supabase
   const mockProducts: Product[] = [
     { id: '1', name: 'Coca Cola 2L', price: 3.50, categoryId: '1' },
     { id: '2', name: 'Pepsi 2L', price: 3.25, categoryId: '1' },
