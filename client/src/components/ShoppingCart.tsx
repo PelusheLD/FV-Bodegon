@@ -5,12 +5,17 @@ import { Input } from "@/components/ui/input";
 import type { Product } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface CartItem extends Product {
@@ -36,6 +41,27 @@ export default function ShoppingCart({
 }: ShoppingCartProps) {
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   const [editWeight, setEditWeight] = useState("");
+  const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (data: any) => apiRequest('/api/orders', { method: 'POST', body: data }),
+    onSuccess: () => {
+      toast({ 
+        title: "¡Pedido realizado!", 
+        description: "Tu pedido ha sido registrado exitosamente" 
+      });
+      setIsCheckoutDialogOpen(false);
+      onCheckout();
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "No se pudo procesar tu pedido. Intenta nuevamente.",
+        variant: "destructive"
+      });
+    },
+  });
 
   const handleEditWeight = (item: CartItem) => {
     setEditingItem(item);
@@ -50,6 +76,33 @@ export default function ShoppingCart({
       }
       setEditingItem(null);
     }
+  };
+
+  const handleSubmitCheckout = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const orderItems = items.map(item => ({
+      productId: item.id,
+      productName: item.name,
+      price: parseFloat(item.price),
+      quantity: item.quantity,
+      measurementType: item.measurementType,
+      subtotal: calculateItemPrice(item),
+    }));
+
+    const orderData = {
+      customerName: formData.get('customerName') as string,
+      customerPhone: formData.get('customerPhone') as string,
+      customerEmail: formData.get('customerEmail') as string || undefined,
+      customerAddress: formData.get('customerAddress') as string || undefined,
+      notes: formData.get('notes') as string || undefined,
+      total: total,
+      status: 'pending',
+      items: orderItems,
+    };
+
+    createOrderMutation.mutate(orderData);
   };
 
   const formatQuantity = (item: CartItem) => {
@@ -205,7 +258,7 @@ export default function ShoppingCart({
                 </span>
               </div>
               <Button 
-                onClick={onCheckout}
+                onClick={() => setIsCheckoutDialogOpen(true)}
                 className="w-full"
                 size="lg"
                 data-testid="button-checkout"
@@ -297,6 +350,98 @@ export default function ShoppingCart({
               Actualizar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Finalizar Compra</DialogTitle>
+            <DialogDescription>
+              Completa tus datos para procesar el pedido
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitCheckout}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Nombre completo *</Label>
+                <Input
+                  id="customerName"
+                  name="customerName"
+                  required
+                  placeholder="Juan Pérez"
+                  data-testid="input-customer-name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerPhone">Teléfono *</Label>
+                <Input
+                  id="customerPhone"
+                  name="customerPhone"
+                  type="tel"
+                  required
+                  placeholder="+1 (555) 123-4567"
+                  data-testid="input-customer-phone"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerEmail">Correo electrónico</Label>
+                <Input
+                  id="customerEmail"
+                  name="customerEmail"
+                  type="email"
+                  placeholder="correo@ejemplo.com"
+                  data-testid="input-customer-email"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerAddress">Dirección de entrega</Label>
+                <Textarea
+                  id="customerAddress"
+                  name="customerAddress"
+                  placeholder="Calle Principal #123, Ciudad"
+                  rows={2}
+                  data-testid="input-customer-address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notas adicionales</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  placeholder="Instrucciones especiales para tu pedido"
+                  rows={2}
+                  data-testid="input-order-notes"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                <span className="font-medium">Total a pagar:</span>
+                <span className="font-bold text-lg text-primary">${total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => setIsCheckoutDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit"
+                disabled={createOrderMutation.isPending}
+                data-testid="button-submit-order"
+              >
+                {createOrderMutation.isPending ? "Procesando..." : "Confirmar Pedido"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

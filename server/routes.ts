@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCategorySchema, insertProductSchema, insertAdminUserSchema, insertSiteSettingsSchema } from "@shared/schema";
+import { insertCategorySchema, insertProductSchema, insertAdminUserSchema, insertSiteSettingsSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -249,6 +249,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     res.status(401).json({ error: "Not authenticated" });
+  });
+
+  // Orders
+  app.get("/api/orders", async (_req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  app.get("/api/orders/:id", async (req, res) => {
+    try {
+      const order = await storage.getOrderById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch order" });
+    }
+  });
+
+  app.post("/api/orders", async (req, res) => {
+    try {
+      const { items, ...orderData } = req.body;
+      const validatedOrder = insertOrderSchema.parse(orderData);
+      
+      const order = await storage.createOrder(validatedOrder);
+      
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          const validatedItem = insertOrderItemSchema.parse({
+            ...item,
+            orderId: order.id,
+          });
+          await storage.createOrderItem(validatedItem);
+        }
+      }
+      
+      res.status(201).json(order);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
+  app.patch("/api/orders/:id/status", async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const order = await storage.updateOrderStatus(req.params.id, status);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  app.get("/api/orders/:id/items", async (req, res) => {
+    try {
+      const items = await storage.getOrderItems(req.params.id);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch order items" });
+    }
   });
 
   const httpServer = createServer(app);

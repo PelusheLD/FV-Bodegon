@@ -73,10 +73,7 @@ export default function HomePage() {
   };
 
   const handleCheckout = () => {
-    toast({
-      title: "Procesando compra",
-      description: "Tu pedido está siendo procesado",
-    });
+    setCartItems([]);
     setIsCartOpen(false);
   };
 

@@ -7,6 +7,10 @@ import {
   type InsertAdminUser,
   type SiteSettings,
   type InsertSiteSettings,
+  type Order,
+  type InsertOrder,
+  type OrderItem,
+  type InsertOrderItem,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -36,6 +40,16 @@ export interface IStorage {
   // Site Settings
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(settings: InsertSiteSettings): Promise<SiteSettings>;
+
+  // Orders
+  getOrders(): Promise<Order[]>;
+  getOrderById(id: string): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
+  
+  // Order Items
+  getOrderItems(orderId: string): Promise<OrderItem[]>;
+  createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
 }
 
 export class MemStorage implements IStorage {
@@ -43,6 +57,8 @@ export class MemStorage implements IStorage {
   private products: Map<string, Product> = new Map();
   private adminUsers: Map<string, AdminUser> = new Map();
   private siteSettings: SiteSettings | undefined;
+  private orders: Map<string, Order> = new Map();
+  private orderItems: Map<string, OrderItem> = new Map();
 
   constructor() {
     this.initializeDefaults();
@@ -200,6 +216,60 @@ export class MemStorage implements IStorage {
     };
     this.siteSettings = updated;
     return updated;
+  }
+
+  async getOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values()).sort((a, b) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  async getOrderById(id: string): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const newOrder: Order = {
+      id: crypto.randomUUID(),
+      ...order,
+      customerEmail: order.customerEmail ?? null,
+      customerAddress: order.customerAddress ?? null,
+      notes: order.notes ?? null,
+      total: order.total.toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.orders.set(newOrder.id, newOrder);
+    return newOrder;
+  }
+
+  async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
+    const existing = this.orders.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      status,
+      updatedAt: new Date(),
+    };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
+  async getOrderItems(orderId: string): Promise<OrderItem[]> {
+    return Array.from(this.orderItems.values()).filter(item => item.orderId === orderId);
+  }
+
+  async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
+    const newItem: OrderItem = {
+      id: crypto.randomUUID(),
+      ...item,
+      price: item.price.toString(),
+      quantity: item.quantity.toString(),
+      subtotal: item.subtotal.toString(),
+    };
+    this.orderItems.set(newItem.id, newItem);
+    return newItem;
   }
 }
 

@@ -16,8 +16,9 @@ import {
 import AdminCategories from "@/components/admin/AdminCategories";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminOrders from "@/components/admin/AdminOrders";
 
-type AdminSection = 'categories' | 'users' | 'settings';
+type AdminSection = 'categories' | 'orders' | 'users' | 'settings';
 
 export default function AdminPage({ onLogout }: { onLogout: () => void }) {
   const [activeSection, setActiveSection] = useState<AdminSection>('categories');
@@ -27,6 +28,11 @@ export default function AdminPage({ onLogout }: { onLogout: () => void }) {
       id: 'categories' as AdminSection,
       title: 'Categorías y Productos',
       icon: FolderOpen,
+    },
+    {
+      id: 'orders' as AdminSection,
+      title: 'Pedidos',
+      icon: ShoppingBag,
     },
     {
       id: 'users' as AdminSection,
@@ -97,6 +103,7 @@ export default function AdminPage({ onLogout }: { onLogout: () => void }) {
 
           <main className="flex-1 overflow-auto p-6">
             {activeSection === 'categories' && <AdminCategories />}
+            {activeSection === 'orders' && <AdminOrders />}
             {activeSection === 'users' && <AdminUsers />}
             {activeSection === 'settings' && <AdminSettings />}
           </main>
