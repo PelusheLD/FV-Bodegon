@@ -116,7 +116,6 @@ export default function ShoppingCart({
     const orderData = {
       customerName: formData.get('customerName') as string,
       customerPhone: formData.get('customerPhone') as string,
-      customerEmail: formData.get('customerEmail') as string || undefined,
       customerAddress: formData.get('customerAddress') as string || undefined,
       notes: formData.get('notes') as string || undefined,
       total: total,
@@ -145,22 +144,24 @@ export default function ShoppingCart({
     return price * item.quantity;
   };
 
+  // Calcular total (los precios ya incluyen IVA)
   const total = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+  
+  // Calcular desglose de IVA incluido
+  const taxPercentage = settings?.taxPercentage ? parseFloat(settings.taxPercentage) : 16;
+  const subtotal = total / (1 + taxPercentage / 100); // Precio sin IVA
+  const taxAmount = total - subtotal; // IVA incluido
 
   const createWhatsAppMessage = (orderData: any) => {
-    let message = `🛒 *NUEVO PEDIDO* 🛒\n\n`;
-    message += `👤 *Cliente:* ${orderData.customerName}\n`;
-    message += `📱 *Teléfono:* ${orderData.customerPhone}\n`;
-    
-    if (orderData.customerEmail) {
-      message += `📧 *Email:* ${orderData.customerEmail}\n`;
-    }
+    let message = ` *NUEVO PEDIDO* \n\n`;
+    message += `*Cliente:* ${orderData.customerName}\n`;
+    message += `*Teléfono:* ${orderData.customerPhone}\n`;
     
     if (orderData.customerAddress) {
-      message += `📍 *Dirección:* ${orderData.customerAddress}\n`;
+      message += `*Dirección:* ${orderData.customerAddress}\n`;
     }
     
-    message += `\n📦 *PRODUCTOS:*\n`;
+    message += `\n*PRODUCTOS:*\n`;
     message += `━━━━━━━━━━━━━━━━\n`;
     
     items.forEach((item, index) => {
@@ -176,13 +177,15 @@ export default function ShoppingCart({
     });
     
     message += `\n━━━━━━━━━━━━━━━━\n`;
-    message += `💰 *TOTAL: $${total.toFixed(2)}*\n`;
+    message += `Subtotal (sin IVA): $${subtotal.toFixed(2)}\n`;
+    message += `IVA incluido (${taxPercentage}%): $${taxAmount.toFixed(2)}\n`;
+    message += `*TOTAL: $${total.toFixed(2)}*\n`;
     
     if (orderData.notes) {
-      message += `\n📝 *Notas:* ${orderData.notes}\n`;
+      message += `\n*Notas:* ${orderData.notes}\n`;
     }
     
-    message += `\n¡Gracias por tu pedido! 😊`;
+    message += `\n¡Gracias por tu pedido! `;
     
     return message;
   };
@@ -313,11 +316,21 @@ export default function ShoppingCart({
             </ScrollArea>
 
             <div className="border-t p-4 space-y-4">
-              <div className="flex items-center justify-between text-lg">
-                <span className="font-semibold">Total:</span>
-                <span className="font-bold text-primary text-xl" data-testid="text-cart-total">
-                  ${total.toFixed(2)}
-                </span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Subtotal (sin IVA):</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>IVA incluido ({taxPercentage}%):</span>
+                  <span>${taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-lg border-t pt-2">
+                  <span className="font-semibold">Total:</span>
+                  <span className="font-bold text-primary text-xl" data-testid="text-cart-total">
+                    ${total.toFixed(2)}
+                  </span>
+                </div>
               </div>
               <Button 
                 onClick={() => setIsCheckoutDialogOpen(true)}
@@ -443,28 +456,18 @@ export default function ShoppingCart({
                   name="customerPhone"
                   type="tel"
                   required
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+58 424-5551570"
                   data-testid="input-customer-phone"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="customerEmail">Correo electrónico</Label>
-                <Input
-                  id="customerEmail"
-                  name="customerEmail"
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  data-testid="input-customer-email"
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="customerAddress">Dirección de entrega</Label>
                 <Textarea
                   id="customerAddress"
                   name="customerAddress"
-                  placeholder="Calle Principal #123, Ciudad"
+                  placeholder="Calle 31 entre avenida 37 y 38 Sector El Palito, Acarigua 3301"
                   rows={2}
                   data-testid="input-customer-address"
                 />
@@ -481,9 +484,19 @@ export default function ShoppingCart({
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                <span className="font-medium">Total a pagar:</span>
-                <span className="font-bold text-lg text-primary">${total.toFixed(2)}</span>
+              <div className="p-3 bg-muted rounded-md space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Subtotal (sin IVA):</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>IVA incluido ({taxPercentage}%):</span>
+                  <span>${taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-lg border-t pt-2">
+                  <span className="font-medium">Total a pagar:</span>
+                  <span className="font-bold text-lg text-primary">${total.toFixed(2)}</span>
+                </div>
               </div>
             </div>
 
@@ -500,7 +513,7 @@ export default function ShoppingCart({
                 disabled={createOrderMutation.isPending}
                 data-testid="button-submit-order"
               >
-                {createOrderMutation.isPending ? "Procesando..." : "Confirmar Pedido"}
+                {createOrderMutation.isPending ? "Procesando..." : "Confirmar Pedido por WhatsApp"}
               </Button>
             </DialogFooter>
           </form>

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Upload as UploadIcon, Link } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Upload as UploadIcon, Link, Package, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,12 @@ export default function AdminCategories() {
     queryKey: ['/api/products'],
   });
 
+  // Estado para paginación
+  const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
+  const [allProducts, setAllProducts] = useState<Record<string, Product[]>>({});
+  const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
+  const [loadingMore, setLoadingMore] = useState<Record<string, boolean>>({});
+
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -44,6 +51,57 @@ export default function AdminCategories() {
   const [productUploading, setProductUploading] = useState(false);
 
   const { toast } = useToast();
+
+  // Función para cargar productos paginados
+  const loadProductsForCategory = async (categoryId: string, page: number = 1, append: boolean = false) => {
+    try {
+      setLoadingMore(prev => ({ ...prev, [categoryId]: true }));
+      
+      const response = await fetch(`/api/admin/products/category/${categoryId}?page=${page}&limit=200`);
+      const data = await response.json();
+      
+      if (append) {
+        setAllProducts(prev => ({
+          ...prev,
+          [categoryId]: [...(prev[categoryId] || []), ...data.products]
+        }));
+      } else {
+        setAllProducts(prev => ({
+          ...prev,
+          [categoryId]: data.products
+        }));
+      }
+      
+      setHasMore(prev => ({ ...prev, [categoryId]: data.hasMore }));
+      setCurrentPage(prev => ({ ...prev, [categoryId]: page }));
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los productos",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMore(prev => ({ ...prev, [categoryId]: false }));
+    }
+  };
+
+  // Cargar productos cuando se expande una categoría
+  useEffect(() => {
+    expandedCategories.forEach(categoryId => {
+      if (!allProducts[categoryId] || allProducts[categoryId].length === 0) {
+        loadProductsForCategory(categoryId, 1, false);
+      }
+    });
+  }, [expandedCategories]);
+
+  // Función para cargar más productos
+  const loadMoreProducts = (categoryId: string) => {
+    if (hasMore[categoryId] && !loadingMore[categoryId]) {
+      const nextPage = (currentPage[categoryId] || 1) + 1;
+      loadProductsForCategory(categoryId, nextPage, true);
+    }
+  };
 
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
@@ -219,6 +277,12 @@ export default function AdminCategories() {
       categoryId: selectedCategoryForProduct || editingProduct?.categoryId || '',
     };
 
+    // Incluir stock si está presente
+    const stock = formData.get('stock') as string;
+    if (stock !== null && stock !== '') {
+      dataToSend.stock = stock;
+    }
+
     if (imageUrl || productImageMode === 'url' || productImageMode === 'upload') {
       dataToSend.imageUrl = imageUrl || null;
     }
@@ -237,8 +301,16 @@ export default function AdminCategories() {
     });
   };
 
+  const toggleCategoryLeySeca = (category: Category) => {
+    updateCategoryMutation.mutate({
+      id: category.id,
+      data: { ...category, leySeca: !category.leySeca },
+    });
+  };
+
   const getCategoryProducts = (categoryId: string) => {
-    return products.filter(p => p.categoryId === categoryId);
+    // Usar productos paginados si están disponibles, sino usar el método anterior
+    return allProducts[categoryId] || products.filter(p => p.categoryId === categoryId);
   };
 
   const openCategoryDialog = (category: Category | null) => {
@@ -337,6 +409,22 @@ export default function AdminCategories() {
                       </span>
                     </div>
 
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={category.leySeca || false}
+                        onCheckedChange={() => toggleCategoryLeySeca(category)}
+                        data-testid={`switch-ley-seca-${category.id}`}
+                        className="data-[state=checked]:bg-red-600"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {category.leySeca ? (
+                          <span className="text-red-600 font-semibold text-xs">LEY SECA</span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Normal</span>
+                        )}
+                      </span>
+                    </div>
+
                     <Button
                       size="icon"
                       variant="ghost"
@@ -399,6 +487,18 @@ export default function AdminCategories() {
                                 <span className="text-xs text-muted-foreground">
                                   {product.measurementType === 'weight' ? '(Por peso)' : '(Por unidad)'}
                                 </span>
+                                {(product as any).externalCode && (
+                                  <span className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
+                                    <Hash className="h-3 w-3" />
+                                    {(product as any).externalCode}
+                                  </span>
+                                )}
+                                {(product as any).stock && (
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+                                    <Package className="h-3 w-3" />
+                                    Stock: {(product as any).stock}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -423,6 +523,27 @@ export default function AdminCategories() {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Botón para cargar más productos */}
+                      {hasMore[category.id] && (
+                        <div className="flex justify-center pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => loadMoreProducts(category.id)}
+                            disabled={loadingMore[category.id]}
+                            className="w-full"
+                          >
+                            {loadingMore[category.id] ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                                Cargando...
+                              </>
+                            ) : (
+                              `Cargar más productos (${allProducts[category.id]?.length || 0} de ${categoryProducts.length})`
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -543,15 +664,15 @@ export default function AdminCategories() {
       </Dialog>
 
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProduct}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="product-name">Nombre</Label>
                 <Input
                   id="product-name"
@@ -597,7 +718,63 @@ export default function AdminCategories() {
                 </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="product-category">Categoría</Label>
+                <Select
+                  value={selectedCategoryForProduct || editingProduct?.categoryId || ''}
+                  onValueChange={setSelectedCategoryForProduct}
+                >
+                  <SelectTrigger data-testid="select-product-category">
+                    <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Cambia la categoría del producto
+                </p>
+              </div>
+
+              {(editingProduct as any)?.externalCode && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="product-external-code">Código Externo (Valery)</Label>
+                  <Input
+                    id="product-external-code"
+                    value={(editingProduct as any)?.externalCode || ''}
+                    disabled
+                    className="bg-muted"
+                    data-testid="input-product-external-code"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Código del sistema Valery (no editable)
+                  </p>
+                </div>
+              )}
+
+              {(editingProduct as any)?.stock !== undefined && (
+                <div className="space-y-2">
+                  <Label htmlFor="product-stock">Stock Actual</Label>
+                  <Input
+                    id="product-stock"
+                    name="stock"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={(editingProduct as any)?.stock || '0'}
+                    data-testid="input-product-stock"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Cantidad disponible en inventario
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-3 md:col-span-2">
                 <Label>Imagen del Producto</Label>
                 <div className="flex gap-4">
                   <Button

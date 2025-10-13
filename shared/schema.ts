@@ -8,6 +8,7 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
   imageUrl: text("image_url"),
   enabled: boolean("enabled").notNull().default(true),
+  leySeca: boolean("ley_seca").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -26,6 +27,8 @@ export const products = pgTable("products", {
   categoryId: varchar("category_id").notNull().references(() => categories.id, { onDelete: 'cascade' }),
   imageUrl: text("image_url"),
   measurementType: text("measurement_type").notNull().default('unit'),
+  externalCode: text("external_code"), // Código del sistema Valery
+  stock: decimal("stock", { precision: 10, scale: 2 }).default('0'),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -34,6 +37,7 @@ export const insertProductSchema = createInsertSchema(products).omit({
   createdAt: true,
 }).extend({
   price: z.string().or(z.number()),
+  stock: z.string().or(z.number()).optional(),
   measurementType: z.enum(['unit', 'weight']),
 });
 
@@ -63,12 +67,41 @@ export const siteSettings = pgTable("site_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   siteName: text("site_name").notNull(),
   siteDescription: text("site_description").notNull(),
+  heroTitle: text("hero_title"),
   contactPhone: text("contact_phone").notNull(),
   contactEmail: text("contact_email").notNull(),
   contactAddress: text("contact_address").notNull(),
   facebookUrl: text("facebook_url"),
   instagramUrl: text("instagram_url"),
   twitterUrl: text("twitter_url"),
+  taxPercentage: decimal("tax_percentage", { precision: 5, scale: 2 }).notNull().default('16.00'),
+  enableCarousel1: boolean("enable_carousel_1").notNull().default(true),
+  enableCarousel2: boolean("enable_carousel_2").notNull().default(true),
+  enableCarousel3: boolean("enable_carousel_3").notNull().default(true),
+  // Carrusel Hero - Vista 1 (FV BODEGONES)
+  carouselTitle1: text("carousel_title_1"),
+  carouselSubtitle1: text("carousel_subtitle_1"),
+  carouselDescription1: text("carousel_description_1"),
+  carouselImage1: text("carousel_image_1"),
+  carouselBackground1: text("carousel_background_1"),
+  carouselButton1: text("carousel_button_1"),
+  carouselUrl1: text("carousel_url_1"),
+  // Carrusel Hero - Vista 2 (ZONA LONNGE)
+  carouselTitle2: text("carousel_title_2"),
+  carouselSubtitle2: text("carousel_subtitle_2"),
+  carouselDescription2: text("carousel_description_2"),
+  carouselImage2: text("carousel_image_2"),
+  carouselBackground2: text("carousel_background_2"),
+  carouselButton2: text("carousel_button_2"),
+  carouselUrl2: text("carousel_url_2"),
+  // Carrusel Hero - Vista 3 (FV FARMACIA)
+  carouselTitle3: text("carousel_title_3"),
+  carouselSubtitle3: text("carousel_subtitle_3"),
+  carouselDescription3: text("carousel_description_3"),
+  carouselImage3: text("carousel_image_3"),
+  carouselBackground3: text("carousel_background_3"),
+  carouselButton3: text("carousel_button_3"),
+  carouselUrl3: text("carousel_url_3"),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 

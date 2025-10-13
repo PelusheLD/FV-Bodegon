@@ -19,6 +19,8 @@ interface ProductCardProps {
   price: string;
   imageUrl?: string | null;
   measurementType: string;
+  stock?: string | null;
+  taxPercentage?: number;
   onAddToCart: (quantity: number) => void;
 }
 
@@ -28,12 +30,19 @@ export default function ProductCard({
   price, 
   imageUrl, 
   measurementType,
+  stock,
+  taxPercentage = 16,
   onAddToCart 
 }: ProductCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [weight, setWeight] = useState("1000");
+  const available = stock === undefined ? true : parseFloat(String(stock)) > 0;
+
+  // El precio ya incluye IVA, solo lo mostramos tal como está
+  const displayPrice = parseFloat(price);
 
   const handleAddClick = () => {
+    if (!available) return;
     if (measurementType === 'weight') {
       setIsDialogOpen(true);
     } else {
@@ -52,9 +61,16 @@ export default function ProductCard({
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-md transition-shadow" data-testid={`card-product-${id}`}>
+      <Card className="overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col" data-testid={`card-product-${id}`}>
         <CardContent className="p-0">
-          <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-32 sm:h-36 md:h-40 lg:h-44 bg-muted flex items-center justify-center overflow-hidden">
+            {typeof stock !== 'undefined' && (
+              <span
+                className={`absolute top-1.5 left-1.5 rounded-sm px-2 py-0.5 text-[10px] font-semibold shadow-sm ${parseFloat(String(stock)) > 0 ? 'bg-[#5ab535] text-white' : 'bg-red-600 text-white'}`}
+              >
+                {parseFloat(String(stock)) > 0 ? 'Disponible' : 'No disponible'}
+              </span>
+            )}
             {imageUrl ? (
               <img 
                 src={imageUrl} 
@@ -66,27 +82,31 @@ export default function ProductCard({
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col items-start gap-3 p-4">
+        <CardFooter className="flex flex-col items-start gap-2 p-3 flex-1">
           <div className="w-full">
-            <h3 className="font-medium line-clamp-2 mb-2 min-h-[2.5rem]" data-testid={`text-product-name-${id}`}>
+            <h3 className="font-medium mb-1 text-xs leading-tight" data-testid={`text-product-name-${id}`}>
               {name}
             </h3>
-            <p className="text-xl font-bold text-primary" data-testid={`text-product-price-${id}`}>
-              ${parseFloat(price).toFixed(2)}{measurementType === 'weight' ? '/kg' : ''}
+            <p className="text-sm font-bold text-primary" data-testid={`text-product-price-${id}`}>
+              ${displayPrice.toFixed(2)}{measurementType === 'weight' ? '/kg' : ''}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Incluye IVA ({taxPercentage}%)
             </p>
             {measurementType === 'weight' && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] text-muted-foreground mt-0.5">
                 Precio por kilogramo
               </p>
             )}
           </div>
           <Button 
             onClick={handleAddClick}
-            className="w-full gap-2"
+            className="w-full gap-1 h-8 text-[11px] whitespace-nowrap mt-auto"
+            disabled={!available}
             data-testid={`button-add-to-cart-${id}`}
           >
-            <Plus className="h-4 w-4" />
-            Agregar al carrito
+            <Plus className="h-3 w-3" />
+            {available ? 'Agregar al carrito' : 'Agotado'}
           </Button>
         </CardFooter>
       </Card>
@@ -100,7 +120,7 @@ export default function ProductCard({
             <div>
               <h3 className="font-medium mb-2">{name}</h3>
               <p className="text-sm text-muted-foreground">
-                Precio: ${parseFloat(price).toFixed(2)}/kg
+                Precio: ${displayPrice.toFixed(2)}/kg (incluye IVA {taxPercentage}%)
               </p>
             </div>
 
@@ -120,7 +140,7 @@ export default function ProductCard({
                   ? `${(parseFloat(weight) / 1000).toFixed(2)} kg` 
                   : `${weight} gramos`}
                 {' - '}
-                Precio total: ${((parseFloat(weight) / 1000) * parseFloat(price)).toFixed(2)}
+                Precio total: ${((parseFloat(weight) / 1000) * displayPrice).toFixed(2)}
               </p>
             </div>
 

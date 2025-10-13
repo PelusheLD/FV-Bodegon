@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
@@ -10,10 +11,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Configurar uploads antes de otros middlewares
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+
+// Middlewares de parsing (después de static files)
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 app.use(
   session({
@@ -85,8 +89,7 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "127.0.0.1",
   }, () => {
     log(`serving on port ${port}`);
   });

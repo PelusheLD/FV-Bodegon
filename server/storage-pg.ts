@@ -1,5 +1,6 @@
 import { db } from './db';
-import { eq, desc } from 'drizzle-orm';
+import fs from 'fs';
+import { eq, desc, sql } from 'drizzle-orm';
 import { 
   categories,
   products,
@@ -55,6 +56,52 @@ export class PostgresStorage implements IStorage {
 
   async getProductsByCategory(categoryId: string): Promise<Product[]> {
     return await db.select().from(products).where(eq(products.categoryId, categoryId));
+  }
+
+  async getProductsByCategoryPaginated(categoryId: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const offset = (page - 1) * limit;
+    
+    // Obtener productos paginados
+    const productsResult = await db.select()
+      .from(products)
+      .where(eq(products.categoryId, categoryId))
+      .limit(limit)
+      .offset(offset);
+    
+    // Contar total de productos
+    const totalResult = await db.select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.categoryId, categoryId));
+    
+    const total = totalResult[0]?.count || 0;
+    const hasMore = offset + productsResult.length < total;
+    
+    return { products: productsResult, total, hasMore };
+  }
+
+  async searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const offset = (page - 1) * limit;
+    
+    // Obtener productos que coincidan con la búsqueda (case insensitive)
+    const productsResult = await db.select()
+      .from(products)
+      .where(
+        sql`${products.categoryId} = ${categoryId} AND LOWER(${products.name}) LIKE LOWER(${'%' + searchTerm + '%'})`
+      )
+      .limit(limit)
+      .offset(offset);
+    
+    // Contar total de productos que coincidan con la búsqueda
+    const totalResult = await db.select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(
+        sql`${products.categoryId} = ${categoryId} AND LOWER(${products.name}) LIKE LOWER(${'%' + searchTerm + '%'})`
+      );
+    
+    const total = totalResult[0]?.count || 0;
+    const hasMore = offset + productsResult.length < total;
+    
+    return { products: productsResult, total, hasMore };
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -176,6 +223,91 @@ export class PostgresStorage implements IStorage {
       subtotal: item.subtotal.toString(),
     };
     const result = await db.insert(orderItems).values(itemData).returning();
+    return result[0];
+  }
+
+  // Importación desde Excel (.xls/.xlsx)
+  async importProductsFromExcel(filePath: string): Promise<{ imported: number; errors: string[] }> {
+    const errors: string[] = [];
+    let imported = 0;
+
+    try {
+      const xlsxModule: any = await import('xlsx');
+      const XLSX: any = xlsxModule?.default ?? xlsxModule;
+
+      const buffer = fs.readFileSync(filePath);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+
+      // Asegurar categoría OTROS
+      let otros = await this.getCategoryByName('OTROS');
+      if (!otros) {
+        otros = await this.createCategory({ name: 'OTROS', enabled: true });
+      }
+
+      const norm = (s: string) => s
+        .toString()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+
+      for (const row of data) {
+        try {
+          const kv: Record<string, any> = {};
+          for (const [k, v] of Object.entries(row)) kv[norm(k)] = v;
+
+          const codigo = kv['codigo'] ?? kv['código'] ?? kv['cod'] ?? '';
+          const nombre = kv['nombre'] ?? kv['producto'] ?? '';
+          const existenciaRaw = kv['existencia actual'] ?? kv['existencia'] ?? kv['stock'] ?? '0';
+          const precioRaw = kv['precio maximo'] ?? kv['precio máximo'] ?? kv['precio maximoo'] ?? kv['precio'] ?? '0';
+
+          const stock = parseFloat(String(existenciaRaw).replace(/,/g, '.')) || 0;
+          const price = parseFloat(String(precioRaw).replace(/,/g, '.')) || 0;
+          const isWeight = typeof nombre === 'string' && nombre.toLowerCase().includes('por peso');
+
+          if (!codigo || !nombre || price <= 0) {
+            errors.push(`Fila inválida: ${JSON.stringify(row)}`);
+            continue;
+          }
+
+          const existing = await this.getProductByExternalCode(codigo);
+          if (existing) {
+            const update: any = { price, stock };
+            if (isWeight && existing.measurementType !== 'weight') update.measurementType = 'weight';
+            await this.updateProduct(existing.id, update);
+          } else {
+            await this.createProduct({
+              name: nombre,
+              price,
+              categoryId: otros.id,
+              externalCode: codigo,
+              stock,
+              measurementType: isWeight ? 'weight' : 'unit',
+            } as any);
+          }
+          imported++;
+        } catch (e: any) {
+          errors.push(e?.message || 'Error procesando fila');
+        }
+      }
+    } catch (e: any) {
+      errors.push(e?.message || 'Error leyendo archivo');
+    }
+
+    return { imported, errors };
+  }
+
+  private async getCategoryByName(name: string): Promise<Category | undefined> {
+    const result = await db.select().from(categories).where(eq(categories.name, name));
+    return result[0];
+  }
+
+  private async getProductByExternalCode(externalCode: string): Promise<Product | undefined> {
+    const result = await db.select().from(products).where(eq(products.externalCode, externalCode));
     return result[0];
   }
 }

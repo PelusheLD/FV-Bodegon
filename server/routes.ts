@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertAdminUserSchema, insertSiteSettingsSchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import { z } from "zod";
-import { upload } from "./upload";
+import { upload, uploadExcel } from "./upload";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/upload", upload.single('image'), async (req, res) => {
@@ -90,8 +90,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products/category/:categoryId", async (req, res) => {
     try {
-      const products = await storage.getProductsByCategory(req.params.categoryId);
-      res.json(products);
+      const { categoryId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const search = req.query.search as string;
+      
+      // Si hay búsqueda, usar el endpoint de búsqueda
+      if (search && search.trim()) {
+        const result = await storage.searchProductsByCategory(categoryId, search.trim(), page, limit);
+        res.json(result);
+      }
+      // Si no hay parámetros de paginación, devolver todos los productos (compatibilidad)
+      else if (!req.query.page && !req.query.limit) {
+        const products = await storage.getProductsByCategory(categoryId);
+        res.json(products);
+      } else {
+        const result = await storage.getProductsByCategoryPaginated(categoryId, page, limit);
+        res.json(result);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  // Endpoint paginado para admin
+  app.get("/api/admin/products/category/:categoryId", async (req, res) => {
+    try {
+      const { categoryId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 200;
+      
+      const result = await storage.getProductsByCategoryPaginated(categoryId, page, limit);
+      res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch products" });
     }
@@ -106,6 +136,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(product);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
+  // Excel Import (restaurado)
+  app.post("/api/products/import-excel", uploadExcel.single('excel'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No se proporcionó archivo Excel" });
+      }
+
+      const result = await storage.importProductsFromExcel(req.file.path);
+      res.json({ 
+        message: `Se importaron ${result.imported} productos exitosamente`,
+        imported: result.imported,
+        errors: result.errors 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Error al importar productos" });
     }
   });
 
@@ -210,10 +258,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/settings", async (req, res) => {
     try {
+      console.log("Settings update request body:", req.body);
+      
+      // Verificar si los campos del carrusel están presentes
+      const carouselFields = [
+        'carouselTitle1', 'carouselSubtitle1', 'carouselDescription1', 'carouselImage1',
+        'carouselTitle2', 'carouselSubtitle2', 'carouselDescription2', 'carouselImage2',
+        'carouselTitle3', 'carouselSubtitle3', 'carouselDescription3', 'carouselImage3'
+      ];
+      
+      console.log("Carousel fields present:", carouselFields.map(field => ({
+        field,
+        value: req.body[field],
+        present: field in req.body
+      })));
+      
       const validatedData = insertSiteSettingsSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
       const settings = await storage.updateSiteSettings(validatedData);
+      console.log("Updated settings:", settings);
       res.json(settings);
     } catch (error) {
+      console.error("Settings update error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }

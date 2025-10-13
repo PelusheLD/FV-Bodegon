@@ -24,10 +24,15 @@ export interface IStorage {
   // Products
   getProducts(): Promise<Product[]>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
+  getProductsByCategoryPaginated(categoryId: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
+  searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
   getProductById(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<void>;
+
+  // Excel Import
+  importProductsFromExcel(filePath: string): Promise<{ imported: number; errors: string[] }>;
 
   // Admin Users
   getAdminUsers(): Promise<AdminUser[]>;
@@ -131,6 +136,35 @@ export class MemStorage implements IStorage {
 
   async getProductsByCategory(categoryId: string): Promise<Product[]> {
     return Array.from(this.products.values()).filter(p => p.categoryId === categoryId);
+  }
+
+  async getProductsByCategoryPaginated(categoryId: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const allProducts = Array.from(this.products.values()).filter(p => p.categoryId === categoryId);
+    const total = allProducts.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const products = allProducts.slice(startIndex, endIndex);
+    const hasMore = endIndex < total;
+    
+    return { products, total, hasMore };
+  }
+
+  async searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    const allProducts = Array.from(this.products.values()).filter(p => p.categoryId === categoryId);
+    
+    // Filtrar productos que contengan el término de búsqueda en el nombre (case insensitive)
+    const searchLower = searchTerm.toLowerCase();
+    const filteredProducts = allProducts.filter(p => 
+      p.name.toLowerCase().includes(searchLower)
+    );
+    
+    const total = filteredProducts.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const products = filteredProducts.slice(startIndex, endIndex);
+    const hasMore = endIndex < total;
+    
+    return { products, total, hasMore };
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -273,8 +307,28 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { PostgresStorage } from './storage-pg';
-
-export const storage = process.env.DATABASE_URL 
-  ? new PostgresStorage()
-  : new MemStorage();
+// Conditionally initialize storage without importing Postgres code
+// unless DATABASE_URL is present. This allows dev mode without a DB.
+export const storage: IStorage = (() => {
+  if (process.env.DATABASE_URL) {
+    // Dynamic import at runtime to avoid evaluating db.ts when not needed
+    const modPromise = import('./storage-pg');
+    // Create a lightweight proxy that delays actual instantiation
+    // until a method is called (so top-level stays synchronous).
+    const handler: ProxyHandler<any> = {
+      get: (_target, prop) => {
+        return async (...args: any[]) => {
+          const mod = await modPromise;
+          const impl = new mod.PostgresStorage();
+          // @ts-expect-error dynamic access
+          return impl[prop](...args);
+        };
+      },
+    };
+    // The proxy type matches IStorage's async methods usage in routes
+    // (all methods are awaited).
+    // @ts-expect-error proxy for async methods
+    return new Proxy({}, handler);
+  }
+  return new MemStorage();
+})();

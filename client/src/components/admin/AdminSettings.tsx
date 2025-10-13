@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SiteSettings } from "@shared/schema";
@@ -33,6 +34,7 @@ export default function AdminSettings() {
     
     const data = {
       siteName: formData.get('siteName') as string,
+      heroTitle: (formData.get('heroTitle') as string) || undefined,
       siteDescription: formData.get('siteDescription') as string,
       contactPhone: formData.get('contactPhone') as string,
       contactEmail: formData.get('contactEmail') as string,
@@ -40,8 +42,35 @@ export default function AdminSettings() {
       facebookUrl: formData.get('facebookUrl') as string,
       instagramUrl: formData.get('instagramUrl') as string,
       twitterUrl: formData.get('twitterUrl') as string,
+      taxPercentage: formData.get('taxPercentage') as string,
+      enableCarousel1: formData.get('enableCarousel1') === 'on',
+      enableCarousel2: formData.get('enableCarousel2') === 'on',
+      enableCarousel3: formData.get('enableCarousel3') === 'on',
+      // Carrusel Hero
+      carouselTitle1: (formData.get('carouselTitle1') as string) || undefined,
+      carouselSubtitle1: (formData.get('carouselSubtitle1') as string) || undefined,
+      carouselDescription1: (formData.get('carouselDescription1') as string) || undefined,
+      carouselImage1: (formData.get('carouselImage1') as string) || undefined,
+      carouselBackground1: (formData.get('carouselBackground1') as string) || undefined,
+      carouselButton1: (formData.get('carouselButton1') as string) || undefined,
+      carouselUrl1: (formData.get('carouselUrl1') as string) || undefined,
+      carouselTitle2: (formData.get('carouselTitle2') as string) || undefined,
+      carouselSubtitle2: (formData.get('carouselSubtitle2') as string) || undefined,
+      carouselDescription2: (formData.get('carouselDescription2') as string) || undefined,
+      carouselImage2: (formData.get('carouselImage2') as string) || undefined,
+      carouselBackground2: (formData.get('carouselBackground2') as string) || undefined,
+      carouselButton2: (formData.get('carouselButton2') as string) || undefined,
+      carouselUrl2: (formData.get('carouselUrl2') as string) || undefined,
+      carouselTitle3: (formData.get('carouselTitle3') as string) || undefined,
+      carouselSubtitle3: (formData.get('carouselSubtitle3') as string) || undefined,
+      carouselDescription3: (formData.get('carouselDescription3') as string) || undefined,
+      carouselImage3: (formData.get('carouselImage3') as string) || undefined,
+      carouselBackground3: (formData.get('carouselBackground3') as string) || undefined,
+      carouselButton3: (formData.get('carouselButton3') as string) || undefined,
+      carouselUrl3: (formData.get('carouselUrl3') as string) || undefined,
     };
 
+    console.log("Frontend sending data:", data);
     updateSettingsMutation.mutate(data);
   };
 
@@ -71,6 +100,17 @@ export default function AdminSettings() {
                 defaultValue={settings?.siteName}
                 required
                 data-testid="input-site-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="heroTitle">Título del Hero (opcional)</Label>
+              <Input
+                id="heroTitle"
+                name="heroTitle"
+                placeholder="Texto grande del encabezado en la portada"
+                defaultValue={(settings as any)?.heroTitle || ''}
+                data-testid="input-hero-title"
               />
             </div>
 
@@ -127,6 +167,24 @@ export default function AdminSettings() {
                 data-testid="input-contact-address"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="taxPercentage">Porcentaje de IVA (%)</Label>
+              <Input
+                id="taxPercentage"
+                name="taxPercentage"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                defaultValue={settings?.taxPercentage || '16.00'}
+                required
+                data-testid="input-tax-percentage"
+              />
+              <p className="text-xs text-muted-foreground">
+                Porcentaje de IVA incluido en los precios de los productos (ej: 16.00 para 16%)
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -170,6 +228,269 @@ export default function AdminSettings() {
                 defaultValue={settings?.twitterUrl || ''}
                 data-testid="input-twitter-url"
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Carrusel Hero</CardTitle>
+            <CardDescription>Configura las 3 vistas del carrusel principal</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Vista 1 - FV BODEGONES */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-lg">Vista 1 - FV BODEGONES</h4>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="enableCarousel1" className="text-sm">Habilitar</Label>
+                  <Switch
+                    id="enableCarousel1"
+                    name="enableCarousel1"
+                    defaultChecked={settings?.enableCarousel1 ?? true}
+                    data-testid="switch-enable-carousel-1"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carouselTitle1">Título</Label>
+                  <Input
+                    id="carouselTitle1"
+                    name="carouselTitle1"
+                    placeholder="FV BODEGONES"
+                    defaultValue={settings?.carouselTitle1 || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="carouselSubtitle1">Subtítulo</Label>
+                  <Input
+                    id="carouselSubtitle1"
+                    name="carouselSubtitle1"
+                    placeholder="Tu tienda de confianza"
+                    defaultValue={settings?.carouselSubtitle1 || ''}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselDescription1">Descripción</Label>
+                <Textarea
+                  id="carouselDescription1"
+                  name="carouselDescription1"
+                  placeholder="Productos de consumo diario, Abierto las 24 horas, los 365 días del año"
+                  defaultValue={settings?.carouselDescription1 || ''}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselImage1">URL de la Imagen</Label>
+                <Input
+                  id="carouselImage1"
+                  name="carouselImage1"
+                  type="url"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  defaultValue={settings?.carouselImage1 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselBackground1">URL de la Imagen de Fondo</Label>
+                <Input
+                  id="carouselBackground1"
+                  name="carouselBackground1"
+                  type="url"
+                  placeholder="https://ejemplo.com/fondo.jpg"
+                  defaultValue={settings?.carouselBackground1 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselButton1">Texto del Botón</Label>
+                <Input
+                  id="carouselButton1"
+                  name="carouselButton1"
+                  placeholder="Ir a Bodega"
+                  defaultValue={settings?.carouselButton1 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselUrl1">URL del Botón</Label>
+                <Input
+                  id="carouselUrl1"
+                  name="carouselUrl1"
+                  type="url"
+                  placeholder="https://ejemplo.com/bodega"
+                  defaultValue={settings?.carouselUrl1 || ''}
+                />
+              </div>
+            </div>
+
+            {/* Vista 2 - ZONA LONNGE */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-lg">Vista 2 - ZONA LONNGE</h4>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="enableCarousel2" className="text-sm">Habilitar</Label>
+                  <Switch
+                    id="enableCarousel2"
+                    name="enableCarousel2"
+                    defaultChecked={settings?.enableCarousel2 ?? true}
+                    data-testid="switch-enable-carousel-2"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carouselTitle2">Título</Label>
+                  <Input
+                    id="carouselTitle2"
+                    name="carouselTitle2"
+                    placeholder="ZONA LONNGE"
+                    defaultValue={settings?.carouselTitle2 || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="carouselSubtitle2">Subtítulo</Label>
+                  <Input
+                    id="carouselSubtitle2"
+                    name="carouselSubtitle2"
+                    placeholder="Tu zona de entretenimiento"
+                    defaultValue={settings?.carouselSubtitle2 || ''}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselDescription2">Descripción</Label>
+                <Textarea
+                  id="carouselDescription2"
+                  name="carouselDescription2"
+                  placeholder="Productos para tu diversión y entretenimiento, siempre disponibles"
+                  defaultValue={settings?.carouselDescription2 || ''}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselImage2">URL de la Imagen</Label>
+                <Input
+                  id="carouselImage2"
+                  name="carouselImage2"
+                  type="url"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  defaultValue={settings?.carouselImage2 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselBackground2">URL de la Imagen de Fondo</Label>
+                <Input
+                  id="carouselBackground2"
+                  name="carouselBackground2"
+                  type="url"
+                  placeholder="https://ejemplo.com/fondo.jpg"
+                  defaultValue={settings?.carouselBackground2 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselButton2">Texto del Botón</Label>
+                <Input
+                  id="carouselButton2"
+                  name="carouselButton2"
+                  placeholder="Ir a Lounge"
+                  defaultValue={settings?.carouselButton2 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselUrl2">URL del Botón</Label>
+                <Input
+                  id="carouselUrl2"
+                  name="carouselUrl2"
+                  type="url"
+                  placeholder="https://ejemplo.com/lounge"
+                  defaultValue={settings?.carouselUrl2 || ''}
+                />
+              </div>
+            </div>
+
+            {/* Vista 3 - FV FARMACIA */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-lg">Vista 3 - FV FARMACIA</h4>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="enableCarousel3" className="text-sm">Habilitar</Label>
+                  <Switch
+                    id="enableCarousel3"
+                    name="enableCarousel3"
+                    defaultChecked={settings?.enableCarousel3 ?? true}
+                    data-testid="switch-enable-carousel-3"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carouselTitle3">Título</Label>
+                  <Input
+                    id="carouselTitle3"
+                    name="carouselTitle3"
+                    placeholder="FV FARMACIA"
+                    defaultValue={settings?.carouselTitle3 || ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="carouselSubtitle3">Subtítulo</Label>
+                  <Input
+                    id="carouselSubtitle3"
+                    name="carouselSubtitle3"
+                    placeholder="Tu farmacia de confianza"
+                    defaultValue={settings?.carouselSubtitle3 || ''}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselDescription3">Descripción</Label>
+                <Textarea
+                  id="carouselDescription3"
+                  name="carouselDescription3"
+                  placeholder="Medicamentos y productos de salud, cuidado personal y bienestar"
+                  defaultValue={settings?.carouselDescription3 || ''}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselImage3">URL de la Imagen</Label>
+                <Input
+                  id="carouselImage3"
+                  name="carouselImage3"
+                  type="url"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  defaultValue={settings?.carouselImage3 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselBackground3">URL de la Imagen de Fondo</Label>
+                <Input
+                  id="carouselBackground3"
+                  name="carouselBackground3"
+                  type="url"
+                  placeholder="https://ejemplo.com/fondo.jpg"
+                  defaultValue={settings?.carouselBackground3 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselButton3">Texto del Botón</Label>
+                <Input
+                  id="carouselButton3"
+                  name="carouselButton3"
+                  placeholder="Ir a Farmacia"
+                  defaultValue={settings?.carouselButton3 || ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="carouselUrl3">URL del Botón</Label>
+                <Input
+                  id="carouselUrl3"
+                  name="carouselUrl3"
+                  type="url"
+                  placeholder="https://ejemplo.com/farmacia"
+                  defaultValue={settings?.carouselUrl3 || ''}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
