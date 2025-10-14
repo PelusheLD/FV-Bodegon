@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useDollarRate } from "@/hooks/useDollarRate";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,9 @@ export default function ShoppingCart({
   const [editWeight, setEditWeight] = useState("");
   const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  const { currency } = useCurrency();
+  const { convertToBolivares, formatCurrency } = useDollarRate();
 
   const { data: settings } = useQuery<SiteSettings>({
     queryKey: ['/api/settings'],
@@ -146,11 +151,14 @@ export default function ShoppingCart({
 
   // Calcular total (los precios ya incluyen IVA)
   const total = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+  const totalInBolivares = convertToBolivares(total);
   
   // Calcular desglose de IVA incluido
   const taxPercentage = settings?.taxPercentage ? parseFloat(settings.taxPercentage) : 16;
   const subtotal = total / (1 + taxPercentage / 100); // Precio sin IVA
+  const subtotalInBolivares = convertToBolivares(subtotal);
   const taxAmount = total - subtotal; // IVA incluido
+  const taxAmountInBolivares = convertToBolivares(taxAmount);
 
   const createWhatsAppMessage = (orderData: any) => {
     let message = ` *NUEVO PEDIDO* \n\n`;
@@ -177,9 +185,10 @@ export default function ShoppingCart({
     });
     
     message += `\n━━━━━━━━━━━━━━━━\n`;
-    message += `Subtotal (sin IVA): $${subtotal.toFixed(2)}\n`;
-    message += `IVA incluido (${taxPercentage}%): $${taxAmount.toFixed(2)}\n`;
-    message += `*TOTAL: $${total.toFixed(2)}*\n`;
+    message += `Subtotal (sin IVA): $${formatCurrency(subtotal)}\n`;
+    message += `IVA incluido (${taxPercentage}%): $${formatCurrency(taxAmount)}\n`;
+    message += `*TOTAL: $${formatCurrency(total)}*\n`;
+    message += `*TOTAL EN BOLÍVARES: Bs. ${formatCurrency(totalInBolivares, 'BS')}*\n`;
     
     if (orderData.notes) {
       message += `\n*Notas:* ${orderData.notes}\n`;
@@ -194,13 +203,7 @@ export default function ShoppingCart({
 
   return (
     <>
-      <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-        onClick={onClose}
-        data-testid="overlay-cart"
-      />
-      
-      <div className="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-card border-l z-50 flex flex-col shadow-xl">
+      <div className="w-full md:w-80 bg-card border rounded-lg shadow-lg flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-display font-semibold text-xl">Carrito de Compras</h2>
           <Button
@@ -319,18 +322,36 @@ export default function ShoppingCart({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Subtotal (sin IVA):</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(subtotal)}`
+                      : `Bs. ${formatCurrency(subtotalInBolivares, 'BS')}`
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>IVA incluido ({taxPercentage}%):</span>
-                  <span>${taxAmount.toFixed(2)}</span>
+                  <span>
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(taxAmount)}`
+                      : `Bs. ${formatCurrency(taxAmountInBolivares, 'BS')}`
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-lg border-t pt-2">
                   <span className="font-semibold">Total:</span>
                   <span className="font-bold text-primary text-xl" data-testid="text-cart-total">
-                    ${total.toFixed(2)}
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(total)}`
+                      : `Bs. ${formatCurrency(totalInBolivares, 'BS')}`
+                    }
                   </span>
                 </div>
+                {currency === 'BS' && (
+                  <div className="text-xs text-muted-foreground text-center">
+                    ≈ ${formatCurrency(total)}
+                  </div>
+                )}
               </div>
               <Button 
                 onClick={() => setIsCheckoutDialogOpen(true)}
@@ -375,7 +396,10 @@ export default function ShoppingCart({
                     ? `${(parseFloat(editWeight) / 1000).toFixed(2)} kg` 
                     : `${editWeight} gramos`}
                   {' - '}
-                  Precio total: ${((parseFloat(editWeight) / 1000) * parseFloat(editingItem.price)).toFixed(2)}
+                  Precio total: {currency === 'USD' 
+                    ? `$${formatCurrency((parseFloat(editWeight) / 1000) * parseFloat(editingItem.price))}`
+                    : `Bs. ${formatCurrency((parseFloat(editWeight) / 1000) * convertToBolivares(parseFloat(editingItem.price)), 'BS')}`
+                  }
                 </p>
               </div>
 
@@ -487,16 +511,36 @@ export default function ShoppingCart({
               <div className="p-3 bg-muted rounded-md space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Subtotal (sin IVA):</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(subtotal)}`
+                      : `Bs. ${formatCurrency(subtotalInBolivares, 'BS')}`
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>IVA incluido ({taxPercentage}%):</span>
-                  <span>${taxAmount.toFixed(2)}</span>
+                  <span>
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(taxAmount)}`
+                      : `Bs. ${formatCurrency(taxAmountInBolivares, 'BS')}`
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-lg border-t pt-2">
                   <span className="font-medium">Total a pagar:</span>
-                  <span className="font-bold text-lg text-primary">${total.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-primary">
+                    {currency === 'USD' 
+                      ? `$${formatCurrency(total)}`
+                      : `Bs. ${formatCurrency(totalInBolivares, 'BS')}`
+                    }
+                  </span>
                 </div>
+                {currency === 'BS' && (
+                  <div className="text-xs text-muted-foreground text-center">
+                    ≈ ${formatCurrency(total)}
+                  </div>
+                )}
               </div>
             </div>
 

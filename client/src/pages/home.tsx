@@ -5,7 +5,9 @@ import Hero from "@/components/Hero";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
 import ShoppingCart from "@/components/ShoppingCart";
+import DollarRate from "@/components/DollarRate";
 import Footer from "@/components/Footer";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Category, Product, SiteSettings } from "@shared/schema";
 
@@ -103,7 +105,8 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <CurrencyProvider>
+      <div className="min-h-screen flex flex-col">
       <Header
         cartCount={cartCount}
         cartTotal={cartTotal}
@@ -169,14 +172,19 @@ export default function HomePage() {
 
       <Footer settings={settings} />
 
-      <ShoppingCart
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-      />
-    </div>
+      {/* Sidebar con Carrito y Tasa del Dólar */}
+      <div className="fixed right-4 top-20 z-40 flex flex-col gap-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+        <DollarRate />
+        <ShoppingCart
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          items={cartItems}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
+        />
+      </div>
+      </div>
+    </CurrencyProvider>
   );
 }

@@ -5,6 +5,9 @@ import type { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useDollarRate } from "@/hooks/useDollarRate";
 import {
   Dialog,
   DialogContent,
@@ -37,9 +40,13 @@ export default function ProductCard({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [weight, setWeight] = useState("1000");
   const available = stock === undefined ? true : parseFloat(String(stock)) > 0;
+  
+  const { currency } = useCurrency();
+  const { convertToBolivares, formatCurrency } = useDollarRate();
 
   // El precio ya incluye IVA, solo lo mostramos tal como está
   const displayPrice = parseFloat(price);
+  const priceInBolivares = convertToBolivares(displayPrice);
 
   const handleAddClick = () => {
     if (!available) return;
@@ -88,8 +95,16 @@ export default function ProductCard({
               {name}
             </h3>
             <p className="text-sm font-bold text-primary" data-testid={`text-product-price-${id}`}>
-              ${displayPrice.toFixed(2)}{measurementType === 'weight' ? '/kg' : ''}
+              {currency === 'USD' 
+                ? `$${formatCurrency(displayPrice)}${measurementType === 'weight' ? '/kg' : ''}`
+                : `Bs. ${formatCurrency(priceInBolivares, 'BS')}${measurementType === 'weight' ? '/kg' : ''}`
+              }
             </p>
+            {currency === 'BS' && (
+              <p className="text-xs text-muted-foreground">
+                ≈ ${formatCurrency(displayPrice)}
+              </p>
+            )}
             <p className="text-[10px] text-muted-foreground">
               Incluye IVA ({taxPercentage}%)
             </p>
@@ -120,7 +135,10 @@ export default function ProductCard({
             <div>
               <h3 className="font-medium mb-2">{name}</h3>
               <p className="text-sm text-muted-foreground">
-                Precio: ${displayPrice.toFixed(2)}/kg (incluye IVA {taxPercentage}%)
+                Precio: {currency === 'USD' 
+                  ? `$${formatCurrency(displayPrice)}/kg (incluye IVA ${taxPercentage}%)`
+                  : `Bs. ${formatCurrency(priceInBolivares, 'BS')}/kg (incluye IVA ${taxPercentage}%)`
+                }
               </p>
             </div>
 
@@ -140,7 +158,10 @@ export default function ProductCard({
                   ? `${(parseFloat(weight) / 1000).toFixed(2)} kg` 
                   : `${weight} gramos`}
                 {' - '}
-                Precio total: ${((parseFloat(weight) / 1000) * displayPrice).toFixed(2)}
+                Precio total: {currency === 'USD' 
+                  ? `$${formatCurrency((parseFloat(weight) / 1000) * displayPrice)}`
+                  : `Bs. ${formatCurrency((parseFloat(weight) / 1000) * priceInBolivares, 'BS')}`
+                }
               </p>
             </div>
 

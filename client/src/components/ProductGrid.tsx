@@ -197,19 +197,19 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
                       </div>
                     </div>
                   )}
-                  <ProductCard
-                    id={product.id}
-                    name={product.name}
-                    price={product.price}
-                    imageUrl={product.imageUrl}
-                    measurementType={product.measurementType}
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                imageUrl={product.imageUrl}
+                measurementType={product.measurementType}
                     stock={category?.leySeca ? "0" : product.stock}
                     taxPercentage={settings?.taxPercentage ? parseFloat(settings.taxPercentage) : 16}
-                    onAddToCart={(quantity) => onAddToCart(product, quantity)}
-                  />
+                onAddToCart={(quantity) => onAddToCart(product, quantity)}
+              />
                 </div>
-              ))}
-            </div>
+            ))}
+          </div>
             
             {/* Indicador de carga al final */}
             {loading && (
