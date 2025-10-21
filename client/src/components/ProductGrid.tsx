@@ -10,9 +10,10 @@ interface ProductGridProps {
   categoryId: string;
   onBack: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
+  products?: Product[]; // Productos pre-filtrados para búsqueda global
 }
 
-export default function ProductGrid({ categoryName, categoryId, onBack, onAddToCart }: ProductGridProps) {
+export default function ProductGrid({ categoryName, categoryId, onBack, onAddToCart, products: preFilteredProducts }: ProductGridProps) {
   const [query, setQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,6 +23,9 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   const [initialLoading, setInitialLoading] = useState(true);
   const [category, setCategory] = useState<Category | null>(null);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+  // Si tenemos productos pre-filtrados (búsqueda global), usarlos directamente
+  const isSearchMode = preFilteredProducts !== undefined;
 
   // Cargar productos paginados
   const loadProducts = useCallback(async (page: number, append: boolean = false, search: string = "") => {
@@ -76,17 +80,27 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
 
   // Cargar productos iniciales
   useEffect(() => {
-    setProducts([]);
-    setCurrentPage(1);
-    setHasMore(true);
-    setInitialLoading(true);
-    setQuery("");
-    setSearchTerm("");
-    loadProducts(1, false);
-  }, [categoryId]);
+    if (isSearchMode) {
+      // En modo búsqueda global, usar productos pre-filtrados
+      setProducts(preFilteredProducts || []);
+      setInitialLoading(false);
+      setHasMore(false); // No hay más productos para cargar en búsqueda global
+    } else {
+      // Modo normal de categoría
+      setProducts([]);
+      setCurrentPage(1);
+      setHasMore(true);
+      setInitialLoading(true);
+      setQuery("");
+      setSearchTerm("");
+      loadProducts(1, false);
+    }
+  }, [categoryId, isSearchMode, preFilteredProducts]);
 
-  // Debounce para la búsqueda
+  // Debounce para la búsqueda (solo en modo categoría)
   useEffect(() => {
+    if (isSearchMode) return; // No hacer búsqueda en modo global
+    
     const timeoutId = setTimeout(() => {
       if (query !== searchTerm) {
         setSearchTerm(query);
@@ -99,15 +113,17 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
     }, 500); // 500ms de debounce
 
     return () => clearTimeout(timeoutId);
-  }, [query, searchTerm, loadProducts]);
+  }, [query, searchTerm, loadProducts, isSearchMode]);
 
   // Scroll al top cuando cambia la categoría
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [categoryId]);
 
-  // Detectar scroll para cargar más productos
+  // Detectar scroll para cargar más productos (solo en modo categoría)
   useEffect(() => {
+    if (isSearchMode) return; // No cargar más en modo global
+    
     const handleScroll = () => {
       if (loading || !hasMore) return;
       
@@ -123,7 +139,7 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, currentPage, loadProducts, searchTerm]);
+  }, [loading, hasMore, currentPage, loadProducts, searchTerm, isSearchMode]);
 
   // Ya no necesitamos filtrado local, se hace en el backend
   const filtered = products;
@@ -160,17 +176,19 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
             {categoryName}
           </h2>
           <div className="ml-auto w-full max-w-xs relative">
-            <Input
-              placeholder="Buscar en esta categoría..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-9"
-            />
-            {loading && query !== searchTerm ? (
-              <Loader2 className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-            ) : (
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {!isSearchMode && (
+              <Input
+                placeholder="Buscar en esta categoría..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-9"
+              />
             )}
+            {!isSearchMode && loading && query !== searchTerm ? (
+              <Loader2 className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+            ) : !isSearchMode ? (
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            ) : null}
           </div>
         </div>
 
@@ -182,7 +200,12 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
-              {query ? 'No hay resultados para tu búsqueda' : 'No hay productos en esta categoría'}
+              {isSearchMode 
+                ? 'No se encontraron productos con ese término de búsqueda' 
+                : query 
+                  ? 'No hay resultados para tu búsqueda' 
+                  : 'No hay productos en esta categoría'
+              }
             </p>
           </div>
         ) : (
@@ -212,7 +235,7 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
           </div>
             
             {/* Indicador de carga al final */}
-            {loading && (
+            {loading && !isSearchMode && (
               <div className="text-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Cargando más productos...</p>
@@ -220,10 +243,19 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
             )}
             
             {/* Mensaje cuando no hay más productos */}
-            {!hasMore && products.length > 0 && (
+            {!hasMore && products.length > 0 && !isSearchMode && (
               <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground">
                   Has visto todos los productos ({products.length} total)
+                </p>
+              </div>
+            )}
+            
+            {/* Mensaje para búsqueda global */}
+            {isSearchMode && products.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {products.length} resultado{products.length !== 1 ? 's' : ''} de búsqueda global
                 </p>
               </div>
             )}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Upload as UploadIcon, Link, Package, Hash } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Upload as UploadIcon, Link, Package, Hash, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -168,10 +168,35 @@ export default function AdminCategories() {
       apiRequest(`/api/products/${id}`, { method: 'PUT', body: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
       toast({ title: "Producto actualizado" });
       setIsProductDialogOpen(false);
       setEditingProduct(null);
       resetProductImageState();
+    },
+  });
+
+  // Mutación específica para toggle de productos destacados
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) =>
+      apiRequest(`/api/products/${id}`, { method: 'PUT', body: data }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+      const isFeatured = variables.data.featured;
+      toast({
+        title: "Producto actualizado",
+        description: `El producto ha sido ${isFeatured ? 'marcado como destacado' : 'desmarcado de destacados'}`,
+      });
+    },
+    onError: (error, variables) => {
+      // Revertir el estado en caso de error
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el producto",
+        variant: "destructive",
+      });
     },
   });
 
@@ -251,6 +276,7 @@ export default function AdminCategories() {
     const name = formData.get('name') as string;
     const price = formData.get('price') as string;
     const measurementType = formData.get('measurementType') as 'unit' | 'weight';
+    const featured = formData.get('featured') === 'on';
 
     let imageUrl = productImageUrl;
 
@@ -275,6 +301,7 @@ export default function AdminCategories() {
       price,
       measurementType,
       categoryId: selectedCategoryForProduct || editingProduct?.categoryId || '',
+      featured,
     };
 
     // Incluir stock si está presente
@@ -305,6 +332,33 @@ export default function AdminCategories() {
     updateCategoryMutation.mutate({
       id: category.id,
       data: { ...category, leySeca: !category.leySeca },
+    });
+  };
+
+  const toggleProductFeatured = (product: Product) => {
+    const newFeaturedState = !(product as any).featured;
+    
+    // Actualización optimista del cache de React Query
+    queryClient.setQueryData(['/api/products'], (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((p: any) => 
+        p.id === product.id ? { ...p, featured: newFeaturedState } : p
+      );
+    });
+
+    // Actualización optimista del cache local allProducts
+    if (allProducts[product.categoryId]) {
+      setAllProducts(prev => ({
+        ...prev,
+        [product.categoryId]: prev[product.categoryId].map((p: any) => 
+          p.id === product.id ? { ...p, featured: newFeaturedState } : p
+        )
+      }));
+    }
+
+    toggleFeaturedMutation.mutate({
+      id: product.id,
+      data: { ...product, featured: newFeaturedState },
     });
   };
 
@@ -503,7 +557,22 @@ export default function AdminCategories() {
                             </div>
                           </div>
 
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-1">
+                              <Switch
+                                checked={(product as any).featured || false}
+                                onCheckedChange={() => toggleProductFeatured(product)}
+                                data-testid={`switch-product-featured-${product.id}`}
+                                className="data-[state=checked]:bg-yellow-500 transition-all duration-200"
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {(product as any).featured ? (
+                                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 transition-colors duration-200" />
+                                ) : (
+                                  <Star className="h-4 w-4 text-gray-400 transition-colors duration-200" />
+                                )}
+                              </span>
+                            </div>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -773,6 +842,25 @@ export default function AdminCategories() {
                   </p>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="product-featured" className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Producto Destacado
+                  </Label>
+                  <Switch
+                    id="product-featured"
+                    name="featured"
+                    defaultChecked={(editingProduct as any)?.featured || false}
+                    data-testid="switch-product-featured"
+                    className="data-[state=checked]:bg-yellow-500"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Los productos destacados aparecen en la sección principal del sitio
+                </p>
+              </div>
 
               <div className="space-y-3 md:col-span-2">
                 <Label>Imagen del Producto</Label>

@@ -82,7 +82,7 @@ const DollarRate: React.FC = () => {
 
               {/* Currency Toggle Info */}
               <div className="text-xs text-muted-foreground text-center">
-                Precios en {currency === 'USD' ? 'Dólares' : 'Bolívares'}
+                Priorizar {currency === 'USD' ? 'Dólares' : 'Bolívares'}
               </div>
 
               {/* Source and Update Time */}

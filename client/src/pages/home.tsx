@@ -7,6 +7,7 @@ import ProductGrid from "@/components/ProductGrid";
 import ShoppingCart from "@/components/ShoppingCart";
 import DollarRate from "@/components/DollarRate";
 import Footer from "@/components/Footer";
+import FeaturedProducts from "@/components/FeaturedProducts";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Category, Product, SiteSettings } from "@shared/schema";
@@ -19,6 +20,8 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const { toast } = useToast();
   const categoriesRef = useRef<HTMLElement | null>(null);
 
@@ -85,10 +88,19 @@ export default function HomePage() {
   };
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
+    if (query.trim() === "") {
+      setIsSearchMode(false);
+      setSearchQuery("");
+      return;
+    }
+    
+    setSearchQuery(query.trim());
+    setIsSearchMode(true);
+    setSelectedCategory(null);
+    
     toast({
       title: "Buscando",
-      description: `Buscando: ${query}`,
+      description: `Buscando: "${query}"`,
     });
   };
 
@@ -103,10 +115,29 @@ export default function HomePage() {
   const cartTotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
   const cartCount = cartItems.length;
 
+  // Filtrar productos según la búsqueda
+  const filteredProducts = isSearchMode && searchQuery 
+    ? allProducts.filter(product => 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  const handleBackFromSearch = () => {
+    setIsSearchMode(false);
+    setSearchQuery("");
+    // Esperar a que se pinte la grilla de categorías y luego hacer scroll
+    setTimeout(() => {
+      const el = document.getElementById('categories');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
 
   return (
     <CurrencyProvider>
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header
         cartCount={cartCount}
         cartTotal={cartTotal}
@@ -115,7 +146,7 @@ export default function HomePage() {
       />
 
       <main className="flex-1">
-        {!selectedCategory ? (
+        {!selectedCategory && !isSearchMode ? (
           <>
             <Hero 
               carouselData={{
@@ -150,11 +181,21 @@ export default function HomePage() {
               onCategorySelect={handleCategorySelect}
               onSearch={handleSearch}
             />
+            {/* Productos Destacados */}
+            <FeaturedProducts onAddToCart={handleAddToCart} />
           </>
+        ) : isSearchMode ? (
+          <ProductGrid
+            categoryName={`Resultados para "${searchQuery}"`}
+            categoryId="search"
+            products={filteredProducts}
+            onBack={handleBackFromSearch}
+            onAddToCart={handleAddToCart}
+          />
         ) : (
           <ProductGrid
-            categoryName={selectedCategory.name}
-            categoryId={selectedCategory.id}
+            categoryName={selectedCategory?.name || ""}
+            categoryId={selectedCategory?.id || ""}
             onBack={() => {
               setSelectedCategory(null);
               // Esperar a que se pinte la grilla de categorías y luego hacer scroll
@@ -175,15 +216,15 @@ export default function HomePage() {
       {/* Sidebar con Carrito y Tasa del Dólar */}
       <div className="fixed right-4 top-20 z-40 flex flex-col gap-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
         <DollarRate />
-        <ShoppingCart
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          items={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-          onCheckout={handleCheckout}
-        />
-      </div>
+      <ShoppingCart
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cartItems}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onCheckout={handleCheckout}
+      />
+    </div>
       </div>
     </CurrencyProvider>
   );

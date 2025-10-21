@@ -23,6 +23,8 @@ export interface IStorage {
 
   // Products
   getProducts(): Promise<Product[]>;
+  // Featured products
+  getFeaturedProducts(limit?: number): Promise<Product[]>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProductsByCategoryPaginated(categoryId: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
   searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;

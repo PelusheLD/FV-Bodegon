@@ -29,6 +29,7 @@ export const products = pgTable("products", {
   measurementType: text("measurement_type").notNull().default('unit'),
   externalCode: text("external_code"), // Código del sistema Valery
   stock: decimal("stock", { precision: 10, scale: 2 }).default('0'),
+  featured: boolean("featured").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -39,6 +40,7 @@ export const insertProductSchema = createInsertSchema(products).omit({
   price: z.string().or(z.number()),
   stock: z.string().or(z.number()).optional(),
   measurementType: z.enum(['unit', 'weight']),
+  featured: z.boolean().optional(),
 });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;

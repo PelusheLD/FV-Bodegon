@@ -54,6 +54,13 @@ export class PostgresStorage implements IStorage {
     return await db.select().from(products);
   }
 
+  async getFeaturedProducts(limit: number = 12): Promise<Product[]> {
+    const result = await db.select().from(products)
+      .where(eq(products.featured, true))
+      .limit(limit);
+    return result;
+  }
+
   async getProductsByCategory(categoryId: string): Promise<Product[]> {
     return await db.select().from(products).where(eq(products.categoryId, categoryId));
   }

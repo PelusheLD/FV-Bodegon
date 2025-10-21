@@ -88,6 +88,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Featured products (debe ir antes de /api/products/:id)
+  app.get("/api/products/featured", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 12;
+      const products = await storage.getFeaturedProducts(limit);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch featured products" });
+    }
+  });
+
   app.get("/api/products/category/:categoryId", async (req, res) => {
     try {
       const { categoryId } = req.params;

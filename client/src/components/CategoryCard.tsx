@@ -54,8 +54,8 @@ export default function CategoryCard({ name, imageUrl, icon: Icon, leySeca = fal
         )}
         
         <span className="text-sm md:text-base font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-[#5ab535] transition-colors duration-300">
-          {name}
-        </span>
+        {name}
+      </span>
       </div>
       
       {/* Indicador de hover */}

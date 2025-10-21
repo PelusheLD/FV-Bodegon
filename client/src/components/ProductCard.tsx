@@ -100,6 +100,11 @@ export default function ProductCard({
                 : `Bs. ${formatCurrency(priceInBolivares, 'BS')}${measurementType === 'weight' ? '/kg' : ''}`
               }
             </p>
+            {currency === 'USD' && (
+              <p className="text-xs text-muted-foreground">
+                ≈ Bs. {formatCurrency(priceInBolivares, 'BS')}
+              </p>
+            )}
             {currency === 'BS' && (
               <p className="text-xs text-muted-foreground">
                 ≈ ${formatCurrency(displayPrice)}
