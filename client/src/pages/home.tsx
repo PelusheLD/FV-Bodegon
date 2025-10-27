@@ -8,6 +8,8 @@ import ShoppingCart from "@/components/ShoppingCart";
 import DollarRate from "@/components/DollarRate";
 import Footer from "@/components/Footer";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import ContactSection from "@/components/ContactSection";
+import MultimediaSection from "@/components/MultimediaSection";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Category, Product, SiteSettings } from "@shared/schema";
@@ -176,13 +178,17 @@ export default function HomePage() {
                 url3: settings?.carouselUrl3 ?? undefined,
               }}
             />
+            {/* Productos Destacados */}
+            <FeaturedProducts onAddToCart={handleAddToCart} />
             <CategoryGrid 
               categories={enabledCategories} 
               onCategorySelect={handleCategorySelect}
               onSearch={handleSearch}
             />
-            {/* Productos Destacados */}
-            <FeaturedProducts onAddToCart={handleAddToCart} />
+            {/* Sección de Contacto */}
+            <ContactSection />
+            {/* Sección de Multimedia */}
+            <MultimediaSection instagramUrl={settings?.instagramUrl} />
           </>
         ) : isSearchMode ? (
           <ProductGrid

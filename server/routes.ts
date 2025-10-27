@@ -138,6 +138,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para conteos de productos por categoría
+  app.get("/api/admin/products/counts", async (req, res) => {
+    try {
+      const counts = await storage.getProductCountsByCategory();
+      res.json(counts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product counts" });
+    }
+  });
+
   app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await storage.getProductById(req.params.id);
@@ -264,6 +274,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  // Instagram Posts
+  app.get("/api/instagram/posts", async (_req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      
+      if (!settings?.instagramAccessToken) {
+        return res.json([]);
+      }
+
+      // Fetch Instagram posts using the access token
+      const response = await fetch(
+        `https://graph.instagram.com/me/media?fields=id,media_type,media_url,permalink,caption,timestamp,thumbnail_url,like_count,comments_count&limit=4&access_token=${settings.instagramAccessToken}`
+      );
+
+      if (!response.ok) {
+        console.error('Instagram API error:', response.status, response.statusText);
+        return res.json([]);
+      }
+
+      const data = await response.json();
+      res.json(data.data || []);
+    } catch (error) {
+      console.error('Error fetching Instagram posts:', error);
+      res.json([]);
     }
   });
 

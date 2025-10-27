@@ -23,8 +23,9 @@ export default function AdminCategories() {
     queryKey: ['/api/categories'],
   });
 
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['/api/products'],
+  // Cargar conteos de productos por categoría
+  const { data: productCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ['/api/admin/products/counts'],
   });
 
   // Estado para paginación
@@ -156,6 +157,7 @@ export default function AdminCategories() {
     mutationFn: async (data: any) => apiRequest('/api/products', { method: 'POST', body: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/products/counts'] });
       toast({ title: "Producto creado" });
       setIsProductDialogOpen(false);
       setEditingProduct(null);
@@ -169,6 +171,7 @@ export default function AdminCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/products/counts'] });
       toast({ title: "Producto actualizado" });
       setIsProductDialogOpen(false);
       setEditingProduct(null);
@@ -183,6 +186,7 @@ export default function AdminCategories() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/products/counts'] });
       const isFeatured = variables.data.featured;
       toast({
         title: "Producto actualizado",
@@ -204,6 +208,7 @@ export default function AdminCategories() {
     mutationFn: async (id: string) => apiRequest(`/api/products/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/products/counts'] });
       toast({ title: "Producto eliminado" });
     },
   });
@@ -338,13 +343,13 @@ export default function AdminCategories() {
   const toggleProductFeatured = (product: Product) => {
     const newFeaturedState = !(product as any).featured;
     
-    // Actualización optimista del cache de React Query
-    queryClient.setQueryData(['/api/products'], (oldData: any) => {
-      if (!oldData) return oldData;
-      return oldData.map((p: any) => 
-        p.id === product.id ? { ...p, featured: newFeaturedState } : p
-      );
-    });
+    // Actualización optimista removida - ya no cargamos todos los productos
+    // queryClient.setQueryData(['/api/products'], (oldData: any) => {
+    //   if (!oldData) return oldData;
+    //   return oldData.map((p: any) => 
+    //     p.id === product.id ? { ...p, featured: newFeaturedState } : p
+    //   );
+    // });
 
     // Actualización optimista del cache local allProducts
     if (allProducts[product.categoryId]) {
@@ -363,8 +368,8 @@ export default function AdminCategories() {
   };
 
   const getCategoryProducts = (categoryId: string) => {
-    // Usar productos paginados si están disponibles, sino usar el método anterior
-    return allProducts[categoryId] || products.filter(p => p.categoryId === categoryId);
+    // Solo usar productos paginados - no hay fallback a todos los productos
+    return allProducts[categoryId] || [];
   };
 
   const openCategoryDialog = (category: Category | null) => {
@@ -442,7 +447,7 @@ export default function AdminCategories() {
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg truncate">{category.name}</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {categoryProducts.length} producto{categoryProducts.length !== 1 ? 's' : ''}
+                        {productCounts[category.id] || 0} producto{(productCounts[category.id] || 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>

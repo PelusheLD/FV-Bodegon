@@ -86,6 +86,22 @@ export class PostgresStorage implements IStorage {
     return { products: productsResult, total, hasMore };
   }
 
+  async getProductCountsByCategory(): Promise<Record<string, number>> {
+    const result = await db.select({
+      categoryId: products.categoryId,
+      count: sql<number>`count(*)`
+    })
+    .from(products)
+    .groupBy(products.categoryId);
+    
+    const counts: Record<string, number> = {};
+    result.forEach(row => {
+      counts[row.categoryId] = row.count;
+    });
+    
+    return counts;
+  }
+
   async searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
     const offset = (page - 1) * limit;
     

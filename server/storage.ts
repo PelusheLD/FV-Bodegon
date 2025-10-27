@@ -28,6 +28,7 @@ export interface IStorage {
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProductsByCategoryPaginated(categoryId: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
   searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }>;
+  getProductCountsByCategory(): Promise<Record<string, number>>;
   getProductById(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;

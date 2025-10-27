@@ -39,10 +39,14 @@ export default function AdminSettings() {
       contactPhone: formData.get('contactPhone') as string,
       contactEmail: formData.get('contactEmail') as string,
       contactAddress: formData.get('contactAddress') as string,
+      whatsappNumber: formData.get('whatsappNumber') as string,
       facebookUrl: formData.get('facebookUrl') as string,
       instagramUrl: formData.get('instagramUrl') as string,
+      instagramAccessToken: formData.get('instagramAccessToken') as string,
       twitterUrl: formData.get('twitterUrl') as string,
       taxPercentage: formData.get('taxPercentage') as string,
+      latitude: formData.get('latitude') as string,
+      longitude: formData.get('longitude') as string,
       enableCarousel1: formData.get('enableCarousel1') === 'on',
       enableCarousel2: formData.get('enableCarousel2') === 'on',
       enableCarousel3: formData.get('enableCarousel3') === 'on',
@@ -169,6 +173,21 @@ export default function AdminSettings() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="whatsappNumber">Número de WhatsApp</Label>
+              <Input
+                id="whatsappNumber"
+                name="whatsappNumber"
+                type="tel"
+                placeholder="+58 412 123 4567"
+                defaultValue={settings?.whatsappNumber || ''}
+                data-testid="input-whatsapp-number"
+              />
+              <p className="text-xs text-muted-foreground">
+                Número de WhatsApp para el botón flotante de contacto (incluye código de país)
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="taxPercentage">Porcentaje de IVA (%)</Label>
               <Input
                 id="taxPercentage"
@@ -183,6 +202,55 @@ export default function AdminSettings() {
               />
               <p className="text-xs text-muted-foreground">
                 Porcentaje de IVA incluido en los precios de los productos (ej: 16.00 para 16%)
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitud</Label>
+                <Input
+                  id="latitude"
+                  name="latitude"
+                  type="number"
+                  step="0.000000000000001"
+                  min="-90"
+                  max="90"
+                  placeholder="9.552533674221890"
+                  defaultValue={settings?.latitude || '9.552533674221890'}
+                  required
+                  data-testid="input-latitude"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Coordenada de latitud para el mapa de contacto (15 decimales de precisión)
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitud</Label>
+                <Input
+                  id="longitude"
+                  name="longitude"
+                  type="number"
+                  step="0.000000000000001"
+                  min="-180"
+                  max="180"
+                  placeholder="-69.205197603437410"
+                  defaultValue={settings?.longitude || '-69.205197603437410'}
+                  required
+                  data-testid="input-longitude"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Coordenada de longitud para el mapa de contacto (15 decimales de precisión)
+                </p>
+              </div>
+            </div>
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Cómo obtener las coordenadas:</strong><br />
+                1. Ve a <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline">Google Maps</a><br />
+                2. Busca tu ubicación<br />
+                3. Haz clic derecho en el punto exacto<br />
+                4. Selecciona las coordenadas que aparecen<br />
+                5. Copia y pega aquí
               </p>
             </div>
           </CardContent>
@@ -216,6 +284,21 @@ export default function AdminSettings() {
                 defaultValue={settings?.instagramUrl || ''}
                 data-testid="input-instagram-url"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instagramAccessToken">Instagram Access Token</Label>
+              <Input
+                id="instagramAccessToken"
+                name="instagramAccessToken"
+                type="password"
+                placeholder="Token de acceso de Instagram..."
+                defaultValue={settings?.instagramAccessToken || ''}
+                data-testid="input-instagram-access-token"
+              />
+              <p className="text-xs text-muted-foreground">
+                Token de acceso para mostrar las últimas publicaciones de Instagram en la página
+              </p>
             </div>
 
             <div className="space-y-2">

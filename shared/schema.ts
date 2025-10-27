@@ -73,8 +73,10 @@ export const siteSettings = pgTable("site_settings", {
   contactPhone: text("contact_phone").notNull(),
   contactEmail: text("contact_email").notNull(),
   contactAddress: text("contact_address").notNull(),
+  whatsappNumber: text("whatsapp_number"),
   facebookUrl: text("facebook_url"),
   instagramUrl: text("instagram_url"),
+  instagramAccessToken: text("instagram_access_token"),
   twitterUrl: text("twitter_url"),
   taxPercentage: decimal("tax_percentage", { precision: 5, scale: 2 }).notNull().default('16.00'),
   enableCarousel1: boolean("enable_carousel_1").notNull().default(true),
@@ -104,6 +106,9 @@ export const siteSettings = pgTable("site_settings", {
   carouselBackground3: text("carousel_background_3"),
   carouselButton3: text("carousel_button_3"),
   carouselUrl3: text("carousel_url_3"),
+  // Coordenadas para el mapa de contacto
+  latitude: decimal("latitude", { precision: 18, scale: 15 }).notNull().default('9.552533674221890'),
+  longitude: decimal("longitude", { precision: 19, scale: 15 }).notNull().default('-69.205197603437410'),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
