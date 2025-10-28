@@ -1,24 +1,33 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import ImportProgress from "./ImportProgress";
 
 export default function AdminImport() {
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
 
   const importMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      // Generar sessionId único
+      const newSessionId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(newSessionId);
+      setIsImporting(true);
+
       const response = await fetch('/api/products/import-excel', {
         method: 'POST',
+        headers: {
+          'X-Session-ID': newSessionId,
+        },
         body: formData,
-        // No establecer Content-Type, dejar que el navegador lo establezca automáticamente
-        // para incluir el boundary del multipart/form-data
       });
       
       if (!response.ok) {
@@ -36,6 +45,8 @@ export default function AdminImport() {
         description: data.message,
       });
       setFile(null);
+      setIsImporting(false);
+      // Mantener sessionId para mostrar el progreso final
     },
     onError: (error: any) => {
       toast({
@@ -43,8 +54,25 @@ export default function AdminImport() {
         description: error.message || "Error desconocido",
         variant: "destructive",
       });
+      setIsImporting(false);
+      setSessionId(null);
     },
   });
+
+  const handleProgressComplete = (data: any) => {
+    setIsImporting(false);
+    // El toast ya se muestra en onSuccess de la mutation
+  };
+
+  const handleProgressError = (data: any) => {
+    setIsImporting(false);
+    setSessionId(null);
+    toast({
+      title: "Error durante la importación",
+      description: data.message,
+      variant: "destructive",
+    });
+  };
 
   const handleFileSelect = (selectedFile: File) => {
     console.log('File selected:', selectedFile.name, 'Type:', selectedFile.type);
@@ -187,16 +215,34 @@ export default function AdminImport() {
             <div className="flex justify-end">
               <Button
                 type="submit"
-                disabled={!file || importMutation.isPending}
+                disabled={!file || isImporting}
                 data-testid="button-import"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                {importMutation.isPending ? "Importando..." : "Importar Productos"}
+                {isImporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar Productos
+                  </>
+                )}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      {/* Barra de progreso */}
+      {sessionId && (
+        <ImportProgress
+          sessionId={sessionId}
+          onComplete={handleProgressComplete}
+          onError={handleProgressError}
+        />
+      )}
 
       {importMutation.data && (
         <Alert>

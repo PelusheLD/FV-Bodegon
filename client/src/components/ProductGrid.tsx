@@ -38,16 +38,42 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
         ? `/api/products/category/${categoryId}?page=${page}&limit=100&search=${encodeURIComponent(search)}`
         : `/api/products/category/${categoryId}?page=${page}&limit=100`;
       
-      const response = await fetch(url);
-      const data = await response.json();
+      console.log('ProductGrid: Loading products from:', url);
       
-      if (append) {
-        setProducts(prev => [...prev, ...data.products]);
-      } else {
-        setProducts(data.products);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      setHasMore(data.hasMore);
+      const data = await response.json();
+      console.log('ProductGrid: Received data:', { url, dataType: Array.isArray(data) ? 'array' : 'object', data });
+      
+      // Manejar diferentes formatos de respuesta
+      let productsArray: Product[] = [];
+      let hasMoreData = false;
+      
+      if (Array.isArray(data)) {
+        // Respuesta directa de productos (sin paginación)
+        productsArray = data;
+        hasMoreData = false;
+      } else if (data.products && Array.isArray(data.products)) {
+        // Respuesta con estructura { products, total, hasMore }
+        productsArray = data.products;
+        hasMoreData = data.hasMore || false;
+      } else {
+        console.warn('ProductGrid: Unexpected data format:', data);
+      }
+      
+      console.log('ProductGrid: Processed products:', { count: productsArray.length, hasMore: hasMoreData });
+      
+      if (append) {
+        setProducts(prev => [...prev, ...productsArray]);
+      } else {
+        setProducts(productsArray);
+      }
+      
+      setHasMore(hasMoreData);
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading products:', error);
@@ -82,18 +108,57 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   useEffect(() => {
     if (isSearchMode) {
       // En modo búsqueda global, usar productos pre-filtrados
-      setProducts(preFilteredProducts || []);
+      const safeProducts = Array.isArray(preFilteredProducts) ? preFilteredProducts : [];
+      setProducts(safeProducts);
       setInitialLoading(false);
       setHasMore(false); // No hay más productos para cargar en búsqueda global
     } else {
-      // Modo normal de categoría
+      // Modo normal de categoría - cargar productos iniciales
       setProducts([]);
       setCurrentPage(1);
       setHasMore(true);
       setInitialLoading(true);
       setQuery("");
       setSearchTerm("");
-      loadProducts(1, false);
+      
+      // Cargar productos directamente sin usar loadProducts para evitar loops
+      const loadInitialProducts = async () => {
+        try {
+          const url = `/api/products/category/${categoryId}?page=1&limit=100`;
+          console.log('ProductGrid: Loading initial products from:', url);
+          
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('ProductGrid: Initial data received:', { dataType: Array.isArray(data) ? 'array' : 'object', data });
+          
+          let productsArray: Product[] = [];
+          let hasMoreData = false;
+          
+          if (Array.isArray(data)) {
+            productsArray = data;
+            hasMoreData = false;
+          } else if (data.products && Array.isArray(data.products)) {
+            productsArray = data.products;
+            hasMoreData = data.hasMore || false;
+          }
+          
+          console.log('ProductGrid: Initial products loaded:', { count: productsArray.length });
+          setProducts(productsArray);
+          setHasMore(hasMoreData);
+          setCurrentPage(1);
+        } catch (error) {
+          console.error('Error loading initial products:', error);
+        } finally {
+          setLoading(false);
+          setInitialLoading(false);
+        }
+      };
+      
+      loadInitialProducts();
     }
   }, [categoryId, isSearchMode, preFilteredProducts]);
 
@@ -142,7 +207,7 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   }, [loading, hasMore, currentPage, loadProducts, searchTerm, isSearchMode]);
 
   // Ya no necesitamos filtrado local, se hace en el backend
-  const filtered = products;
+  const filtered = products || [];
 
   return (
     <section className="py-8 md:py-12">

@@ -12,6 +12,7 @@ import ContactSection from "@/components/ContactSection";
 import MultimediaSection from "@/components/MultimediaSection";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
+import { searchProducts } from "@/lib/searchUtils";
 import type { Category, Product, SiteSettings } from "@shared/schema";
 
 interface CartItem extends Product {
@@ -117,11 +118,9 @@ export default function HomePage() {
   const cartTotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
   const cartCount = cartItems.length;
 
-  // Filtrar productos según la búsqueda
+  // Filtrar productos según la búsqueda inteligente
   const filteredProducts = isSearchMode && searchQuery 
-    ? allProducts.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? searchProducts(allProducts, searchQuery)
     : [];
 
   const handleBackFromSearch = () => {

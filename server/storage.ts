@@ -35,7 +35,7 @@ export interface IStorage {
   deleteProduct(id: string): Promise<void>;
 
   // Excel Import
-  importProductsFromExcel(filePath: string): Promise<{ imported: number; errors: string[] }>;
+  importProductsFromExcel(filePath: string, sessionId?: string): Promise<{ imported: number; errors: string[] }>;
 
   // Admin Users
   getAdminUsers(): Promise<AdminUser[]>;
@@ -155,11 +155,24 @@ export class MemStorage implements IStorage {
   async searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
     const allProducts = Array.from(this.products.values()).filter(p => p.categoryId === categoryId);
     
-    // Filtrar productos que contengan el término de búsqueda en el nombre (case insensitive)
-    const searchLower = searchTerm.toLowerCase();
-    const filteredProducts = allProducts.filter(p => 
-      p.name.toLowerCase().includes(searchLower)
-    );
+    // Dividir el término de búsqueda en palabras individuales
+    const searchWords = searchTerm.trim().split(/\s+/).filter(word => word.length > 0);
+    
+    if (searchWords.length === 0) {
+      // Si no hay palabras de búsqueda, devolver productos paginados normales
+      return this.getProductsByCategoryPaginated(categoryId, page, limit);
+    }
+    
+    // Filtrar productos que contengan TODAS las palabras (sin importar el orden)
+    const searchWordsLower = searchWords.map(word => word.toLowerCase());
+    const filteredProducts = allProducts.filter(p => {
+      const productNameLower = p.name.toLowerCase();
+      // Todas las palabras deben estar presentes en el nombre del producto
+      return searchWordsLower.every(word => productNameLower.includes(word));
+    });
+    
+    // Ordenar alfabéticamente
+    filteredProducts.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
     
     const total = filteredProducts.length;
     const startIndex = (page - 1) * limit;
@@ -307,6 +320,11 @@ export class MemStorage implements IStorage {
     };
     this.orderItems.set(newItem.id, newItem);
     return newItem;
+  }
+
+  async importProductsFromExcel(filePath: string, sessionId?: string): Promise<{ imported: number; errors: string[] }> {
+    // Implementación básica para desarrollo sin DB
+    return { imported: 0, errors: ['Excel import not available in memory storage'] };
   }
 }
 

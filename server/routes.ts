@@ -71,10 +71,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/categories/:id", async (req, res) => {
     try {
-      await storage.deleteCategory(req.params.id);
+      const { id } = req.params;
+      
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return res.status(400).json({ error: "Invalid category ID format" });
+      }
+
+      await storage.deleteCategory(id);
       res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: "Failed to delete category" });
+    } catch (error: any) {
+      console.error("Error deleting category:", error);
+      
+      // Handle specific database constraint errors
+      if (error.code === '23503') {
+        return res.status(409).json({ 
+          error: "No se puede eliminar la categoría porque tiene productos asociados con pedidos existentes",
+          details: "Esta categoría contiene productos que han sido incluidos en pedidos anteriores. Para eliminar la categoría, primero debe eliminar todos los pedidos relacionados."
+        });
+      }
+      
+      res.status(500).json({ 
+        error: "Error al eliminar la categoría", 
+        details: error.message || "Error desconocido",
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
@@ -108,7 +130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Si hay búsqueda, usar el endpoint de búsqueda
       if (search && search.trim()) {
+        console.log('Routes: Search request:', { categoryId, search: search.trim(), page, limit });
         const result = await storage.searchProductsByCategory(categoryId, search.trim(), page, limit);
+        console.log('Routes: Search result:', result);
         res.json(result);
       }
       // Si no hay parámetros de paginación, devolver todos los productos (compatibilidad)
@@ -160,18 +184,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Excel Import (restaurado)
+  // Server-Sent Events para progreso de importación
+  app.get("/api/products/import-progress/:sessionId", (req, res) => {
+    const { sessionId } = req.params;
+    
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control',
+    });
+
+    // Función para enviar progreso
+    const sendProgress = (data: any) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Almacenar la función de envío para esta sesión
+    if (!global.importProgress) {
+      global.importProgress = new Map();
+    }
+    global.importProgress.set(sessionId, sendProgress);
+
+    // Enviar evento inicial
+    sendProgress({ type: 'connected', message: 'Conectado al progreso de importación' });
+
+    // Limpiar cuando se cierre la conexión
+    req.on('close', () => {
+      global.importProgress?.delete(sessionId);
+    });
+  });
+
+  // Excel Import con progreso
   app.post("/api/products/import-excel", uploadExcel.single('excel'), async (req, res) => {
+    const sessionId = req.headers['x-session-id'] as string || `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No se proporcionó archivo Excel" });
       }
 
-      const result = await storage.importProductsFromExcel(req.file.path);
+      const result = await storage.importProductsFromExcel(req.file.path, sessionId);
       res.json({ 
         message: `Se importaron ${result.imported} productos exitosamente`,
         imported: result.imported,
-        errors: result.errors 
+        errors: result.errors,
+        sessionId
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Error al importar productos" });

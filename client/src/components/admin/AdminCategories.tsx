@@ -40,6 +40,7 @@ export default function AdminCategories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedCategoryForProduct, setSelectedCategoryForProduct] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   
   const [categoryImageMode, setCategoryImageMode] = useState<'url' | 'upload'>('url');
   const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
@@ -149,6 +150,8 @@ export default function AdminCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/products/counts'] });
+      setCategoryToDelete(null);
       toast({ title: "Categoría eliminada" });
     },
   });
@@ -496,7 +499,7 @@ export default function AdminCategories() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => deleteCategoryMutation.mutate(category.id)}
+                      onClick={() => setCategoryToDelete(category)}
                       data-testid={`button-delete-category-${category.id}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -944,6 +947,49 @@ export default function AdminCategories() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmación para eliminar categoría */}
+      <Dialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Confirmar eliminación?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {categoryToDelete && (
+              <p className="text-sm text-muted-foreground">
+                ¿Estás seguro de que deseas eliminar la categoría <strong>"{categoryToDelete.name}"</strong>?
+                {productCounts[categoryToDelete.id] > 0 && (
+                  <span className="block mt-2 text-destructive">
+                    Esta categoría tiene {productCounts[categoryToDelete.id]} producto(s). 
+                    Todos los productos de esta categoría también serán eliminados.
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setCategoryToDelete(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (categoryToDelete) {
+                  deleteCategoryMutation.mutate(categoryToDelete.id);
+                }
+              }}
+              disabled={deleteCategoryMutation.isPending}
+            >
+              {deleteCategoryMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

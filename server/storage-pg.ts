@@ -1,6 +1,6 @@
 import { db } from './db';
 import fs from 'fs';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and, like } from 'drizzle-orm';
 import { 
   categories,
   products,
@@ -47,7 +47,38 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await db.delete(categories).where(eq(categories.id, id));
+    try {
+      console.log("Attempting to delete category with ID:", id);
+      
+      // First check if category exists
+      const existingCategory = await db.select().from(categories).where(eq(categories.id, id));
+      if (existingCategory.length === 0) {
+        throw new Error(`Category with ID ${id} not found`);
+      }
+
+      // Get all products in this category
+      const productsInCategory = await db.select().from(products).where(eq(products.categoryId, id));
+      console.log(`Found ${productsInCategory.length} products in category`);
+
+      // Delete order_items that reference products in this category
+      if (productsInCategory.length > 0) {
+        const productIds = productsInCategory.map(p => p.id);
+        console.log("Deleting order_items for products:", productIds);
+        
+        // Delete order_items in batches to avoid potential issues
+        for (const productId of productIds) {
+          await db.delete(orderItems).where(eq(orderItems.productId, productId));
+        }
+        console.log("Order items deleted successfully");
+      }
+      
+      // Now delete the category (this will cascade delete the products)
+      const result = await db.delete(categories).where(eq(categories.id, id));
+      console.log("Category deleted successfully:", result);
+    } catch (error) {
+      console.error("Database error in deleteCategory:", error);
+      throw error;
+    }
   }
 
   async getProducts(): Promise<Product[]> {
@@ -103,28 +134,58 @@ export class PostgresStorage implements IStorage {
   }
 
   async searchProductsByCategory(categoryId: string, searchTerm: string, page: number, limit: number): Promise<{ products: Product[]; total: number; hasMore: boolean }> {
+    console.log('PostgresStorage: searchProductsByCategory called with:', { categoryId, searchTerm, page, limit });
+    
     const offset = (page - 1) * limit;
     
-    // Obtener productos que coincidan con la búsqueda (case insensitive)
-    const productsResult = await db.select()
-      .from(products)
-      .where(
-        sql`${products.categoryId} = ${categoryId} AND LOWER(${products.name}) LIKE LOWER(${'%' + searchTerm + '%'})`
-      )
-      .limit(limit)
-      .offset(offset);
+    // Dividir el término de búsqueda en palabras individuales
+    const searchWords = searchTerm.trim().split(/\s+/).filter(word => word.length > 0);
+    console.log('PostgresStorage: searchWords:', searchWords);
     
-    // Contar total de productos que coincidan con la búsqueda
-    const totalResult = await db.select({ count: sql<number>`count(*)` })
-      .from(products)
-      .where(
-        sql`${products.categoryId} = ${categoryId} AND LOWER(${products.name}) LIKE LOWER(${'%' + searchTerm + '%'})`
-      );
+    if (searchWords.length === 0) {
+      // Si no hay palabras de búsqueda, devolver productos paginados normales
+      console.log('PostgresStorage: No search words, returning paginated products');
+      return this.getProductsByCategoryPaginated(categoryId, page, limit);
+    }
     
-    const total = totalResult[0]?.count || 0;
-    const hasMore = offset + productsResult.length < total;
-    
-    return { products: productsResult, total, hasMore };
+    try {
+      console.log('PostgresStorage: Starting search with words:', searchWords);
+      
+      // Obtener todos los productos de la categoría primero
+      const allProducts = await db.select()
+        .from(products)
+        .where(eq(products.categoryId, categoryId));
+      
+      console.log('PostgresStorage: Total products in category:', allProducts.length);
+      
+      // Filtrar productos que contengan todas las palabras (en cualquier orden)
+      const filteredProducts = allProducts.filter(product => {
+        const productNameLower = product.name.toLowerCase();
+        
+        // Verificar que todas las palabras estén presentes en el nombre del producto
+        return searchWords.every(word => 
+          productNameLower.includes(word.toLowerCase())
+        );
+      });
+      
+      console.log('PostgresStorage: Filtered products count:', filteredProducts.length);
+      
+      // Ordenar alfabéticamente
+      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+      
+      // Aplicar paginación
+      const total = filteredProducts.length;
+      const paginatedProducts = filteredProducts.slice(offset, offset + limit);
+      const hasMore = offset + paginatedProducts.length < total;
+      
+      console.log('PostgresStorage: Paginated products:', paginatedProducts.length);
+      console.log('PostgresStorage: Total matches:', total);
+      
+      return { products: paginatedProducts, total, hasMore };
+    } catch (error) {
+      console.error('PostgresStorage: Error in searchProductsByCategory:', error);
+      throw error;
+    }
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -249,12 +310,21 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  // Importación desde Excel (.xls/.xlsx)
-  async importProductsFromExcel(filePath: string): Promise<{ imported: number; errors: string[] }> {
+  // Importación desde Excel (.xls/.xlsx) con progreso
+  async importProductsFromExcel(filePath: string, sessionId?: string): Promise<{ imported: number; errors: string[] }> {
     const errors: string[] = [];
     let imported = 0;
 
+    // Función para enviar progreso
+    const sendProgress = (data: any) => {
+      if (sessionId && global.importProgress?.has(sessionId)) {
+        global.importProgress.get(sessionId)!(data);
+      }
+    };
+
     try {
+      sendProgress({ type: 'start', message: 'Iniciando lectura del archivo Excel...' });
+      
       const xlsxModule: any = await import('xlsx');
       const XLSX: any = xlsxModule?.default ?? xlsxModule;
 
@@ -263,6 +333,13 @@ export class PostgresStorage implements IStorage {
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const data: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+
+      sendProgress({ 
+        type: 'progress', 
+        message: `Archivo leído exitosamente. Procesando ${data.length} filas...`,
+        total: data.length,
+        processed: 0
+      });
 
       // Asegurar categoría OTROS
       let otros = await this.getCategoryByName('OTROS');
@@ -278,7 +355,8 @@ export class PostgresStorage implements IStorage {
         .trim()
         .toLowerCase();
 
-      for (const row of data) {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         try {
           const kv: Record<string, any> = {};
           for (const [k, v] of Object.entries(row)) kv[norm(k)] = v;
@@ -293,7 +371,7 @@ export class PostgresStorage implements IStorage {
           const isWeight = typeof nombre === 'string' && nombre.toLowerCase().includes('por peso');
 
           if (!codigo || !nombre || price <= 0) {
-            errors.push(`Fila inválida: ${JSON.stringify(row)}`);
+            errors.push(`Fila ${i + 1} inválida: ${JSON.stringify(row)}`);
             continue;
           }
 
@@ -313,12 +391,37 @@ export class PostgresStorage implements IStorage {
             } as any);
           }
           imported++;
+
+          // Enviar progreso cada 10 productos o al final
+          if ((i + 1) % 10 === 0 || i === data.length - 1) {
+            sendProgress({
+              type: 'progress',
+              message: `Procesando producto ${i + 1} de ${data.length}...`,
+              total: data.length,
+              processed: i + 1,
+              imported,
+              errors: errors.length
+            });
+          }
         } catch (e: any) {
-          errors.push(e?.message || 'Error procesando fila');
+          errors.push(`Fila ${i + 1}: ${e?.message || 'Error procesando fila'}`);
         }
       }
+
+      sendProgress({
+        type: 'complete',
+        message: `Importación completada. ${imported} productos importados, ${errors.length} errores.`,
+        imported,
+        errors: errors.length
+      });
+
     } catch (e: any) {
       errors.push(e?.message || 'Error leyendo archivo');
+      sendProgress({
+        type: 'error',
+        message: `Error durante la importación: ${e?.message || 'Error desconocido'}`,
+        errors: errors.length
+      });
     }
 
     return { imported, errors };
