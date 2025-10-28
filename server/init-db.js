@@ -13,6 +13,14 @@ try {
     process.exit(1);
   }
 
+  // Agregar parámetros SSL a la URL para producción
+  if (process.env.NODE_ENV === 'production') {
+    const dbUrl = new URL(process.env.DATABASE_URL);
+    dbUrl.searchParams.set('sslmode', 'require');
+    process.env.DATABASE_URL = dbUrl.toString();
+    console.log('🔒 Configurando SSL para producción...');
+  }
+
   console.log('📊 Creando tablas...');
   execSync('npm run db:push', { stdio: 'inherit' });
   
