@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import "./types/session";
@@ -11,6 +12,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Configurar CORS
+app.use(cors({
+  origin: [
+    'http://localhost:5173', // Vite dev server
+    'https://fv-bodegon-frontend.onrender.com', // Frontend en Render
+    'https://fv-bodegon.onrender.com' // Backend en Render (por si acaso)
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID']
+}));
 
 // Configurar uploads antes de otros middlewares
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
