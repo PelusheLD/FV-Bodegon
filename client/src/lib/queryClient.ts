@@ -13,6 +13,13 @@ interface ApiRequestOptions {
   headers?: Record<string, string>;
 }
 
+// Función helper para construir URLs de API
+function buildApiUrl(path: string): string {
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${cleanPath}`;
+}
+
 export async function apiRequest(
   url: string,
   options: ApiRequestOptions = {},
@@ -46,7 +53,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = buildApiUrl(queryKey.join("/") as string);
+    const res = await fetch(url, {
       credentials: "include",
     });
 

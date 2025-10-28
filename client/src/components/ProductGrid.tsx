@@ -34,9 +34,10 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
     setLoading(true);
     try {
       // Construir URL con parámetros de búsqueda si existe
+      const baseUrl = import.meta.env.VITE_API_URL || '';
       const url = search.trim() 
-        ? `/api/products/category/${categoryId}?page=${page}&limit=100&search=${encodeURIComponent(search)}`
-        : `/api/products/category/${categoryId}?page=${page}&limit=100`;
+        ? `${baseUrl}/api/products/category/${categoryId}?page=${page}&limit=100&search=${encodeURIComponent(search)}`
+        : `${baseUrl}/api/products/category/${categoryId}?page=${page}&limit=100`;
       
       console.log('ProductGrid: Loading products from:', url);
       
@@ -87,14 +88,16 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   useEffect(() => {
     const loadData = async () => {
       try {
+        const baseUrl = import.meta.env.VITE_API_URL || '';
+        
         // Cargar categorías
-        const categoriesResponse = await fetch('/api/categories');
+        const categoriesResponse = await fetch(`${baseUrl}/api/categories`);
         const categories = await categoriesResponse.json();
         const currentCategory = categories.find((c: Category) => c.id === categoryId);
         setCategory(currentCategory || null);
 
         // Cargar settings
-        const settingsResponse = await fetch('/api/settings');
+        const settingsResponse = await fetch(`${baseUrl}/api/settings`);
         const settingsData = await settingsResponse.json();
         setSettings(settingsData);
       } catch (error) {
