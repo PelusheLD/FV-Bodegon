@@ -1,0 +1,38 @@
+Crea una página web moderna y responsiva para una tienda llamada "FV BODEGONES". El sitio debe tener un diseño limpio, intuitivo y orientado a la experiencia de usuario móvil y de escritorio. La estructura debe incluir:
+
+1. **Encabezado fijo** con el nombre "FV BODEGONES", un ícono de carrito de compras con contador de productos y total acumulado, y un menú de navegación lateral o superior.
+2. **Catálogo de categorías** en formato de tarjetas o botones grandes, cada uno con ícono representativo y nombre. Las categorías deben incluir:
+   - Bebidas
+   - Salud y cuidado personal
+   - Carnes, charcutería, aves, cerdo
+   - Congelados / pescadería
+   - Dulces, snacks y cereales
+   - Enlatados y condimentos
+   - Frutas y verduras
+   - Hogar y limpieza
+   - Licores
+   - Mascotas
+   - Panes
+   - Productos fitness
+   - Víveres
+tambien se debe de poder agregar mas categorias a travez del admin para en tal caso seguir agregando mas productos 
+
+3. **Sistema dinámico de carga de productos**: Al hacer clic en una categoría, los productos deben cargarse sin recargar la página (uso de JavaScript o framework como React/Vue si aplica). Cada producto debe mostrar:
+   - Imagen
+   - Nombre
+   - Precio
+   - Botón "Agregar al carrito"
+
+4. **Carrito de compras interactivo**: Mostrar resumen de productos agregados, total, y botón para finalizar compra. Debe actualizarse en tiempo real.
+
+5. **Estilo visual**:
+   - Paleta de colores cálida y confiable (tonos tierra, verde , negro, blanco)
+   - Tipografía legible y amigable
+   - Íconos simples y funcionales
+   - Diseño adaptable (mobile-first)
+
+6. **Footer** con información de contacto, redes sociales, y aviso legal.
+
+Opcional: Agrega soporte para múltiples bodegones o sucursales, con selector de ubicación y catálogo personalizado por tienda.
+
+El objetivo es que "FV BODEGONES" sea una tienda digital clara, rápida y fácil de usar, ideal para clientes que buscan productos de consumo diario en bodegones locales.

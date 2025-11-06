@@ -1,0 +1,2 @@
+ALTER TABLE "site_settings" ADD COLUMN "latitude" numeric(10, 8) DEFAULT '9.55253367422189' NOT NULL;--> statement-breakpoint
+ALTER TABLE "site_settings" ADD COLUMN "longitude" numeric(11, 8) DEFAULT '-69.20519760343741' NOT NULL;
