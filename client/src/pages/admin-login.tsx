@@ -22,16 +22,34 @@ export default function AdminLoginPage({ onLogin }: AdminLoginProps) {
     setIsLoading(true);
 
     try {
-      await apiRequest('/api/auth/login', {
+      const user = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: { username, password },
       });
 
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Bienvenido al panel administrativo",
-      });
-      onLogin();
+      // Esperar un momento para asegurar que la cookie se haya establecido
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verificar que la sesión se haya establecido correctamente
+      try {
+        const sessionUser = await apiRequest('/api/auth/session');
+        if (sessionUser && sessionUser.id) {
+          toast({
+            title: "Inicio de sesión exitoso",
+            description: "Bienvenido al panel administrativo",
+          });
+          onLogin();
+        } else {
+          throw new Error("La sesión no se estableció correctamente");
+        }
+      } catch (sessionError) {
+        // Si la verificación de sesión falla, mostrar error
+        toast({
+          title: "Error de sesión",
+          description: "No se pudo establecer la sesión. Por favor, intenta de nuevo.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error de autenticación",

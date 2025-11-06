@@ -30,12 +30,16 @@ function Router() {
         } else {
           setIsAdminAuthenticated(false);
         }
-      } catch (error) {
-        setIsAdminAuthenticated(false);
-        // Si estamos en /admin y no hay sesión, redirigir a login
-        const currentPath = window.location.pathname;
-        if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
-          setLocation('/admin/login');
+      } catch (error: any) {
+        // Solo establecer como no autenticado si es un error 401
+        // Otros errores (red, servidor, etc.) no deberían cambiar el estado
+        if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+          setIsAdminAuthenticated(false);
+          // Si estamos en /admin y no hay sesión, redirigir a login
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
+            setLocation('/admin/login');
+          }
         }
       } finally {
         setIsCheckingSession(false);
@@ -64,11 +68,14 @@ function Router() {
               setLocation('/admin/login');
             }
           }
-        } catch (error) {
-          setIsAdminAuthenticated(false);
-          // Si estamos en /admin pero no en login, redirigir a login
-          if (location !== '/admin/login') {
-            setLocation('/admin/login');
+        } catch (error: any) {
+          // Solo establecer como no autenticado si es un error 401
+          if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+            setIsAdminAuthenticated(false);
+            // Si estamos en /admin pero no en login, redirigir a login
+            if (location !== '/admin/login') {
+              setLocation('/admin/login');
+            }
           }
         }
       };

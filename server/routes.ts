@@ -396,25 +396,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication
   app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      const user = await storage.getAdminUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+    return new Promise<void>((resolve) => {
+      try {
+        const { username, password } = req.body;
+        storage.getAdminUserByUsername(username).then((user) => {
+          if (!user || user.password !== password) {
+            res.status(401).json({ error: "Invalid credentials" });
+            resolve();
+            return;
+          }
 
-      if (req.session) {
-        req.session.userId = user.id;
-        req.session.username = user.username;
-        req.session.role = user.role;
+          if (req.session) {
+            req.session.userId = user.id;
+            req.session.username = user.username;
+            req.session.role = user.role;
+            
+            // Guardar la sesión explícitamente antes de responder
+            req.session.save((err: Error | null) => {
+              if (err) {
+                res.status(500).json({ error: "Failed to save session" });
+                resolve();
+                return;
+              }
+              
+              const { password: _, ...sanitizedUser } = user;
+              res.json(sanitizedUser);
+              resolve();
+            });
+          } else {
+            res.status(500).json({ error: "Session not available" });
+            resolve();
+          }
+        }).catch((error) => {
+          res.status(500).json({ error: "Login failed" });
+          resolve();
+        });
+      } catch (error) {
+        res.status(500).json({ error: "Login failed" });
+        resolve();
       }
-
-      const { password: _, ...sanitizedUser } = user;
-      res.json(sanitizedUser);
-    } catch (error) {
-      res.status(500).json({ error: "Login failed" });
-    }
+    });
   });
 
   app.post("/api/auth/logout", async (req, res) => {
@@ -452,14 +473,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/session", async (req, res) => {
-    if (req.session?.userId) {
-      const user = await storage.getAdminUserById(req.session.userId);
-      if (user) {
-        const { password, ...sanitizedUser } = user;
-        return res.json(sanitizedUser);
+    try {
+      if (req.session?.userId) {
+        const user = await storage.getAdminUserById(req.session.userId);
+        if (user) {
+          const { password, ...sanitizedUser } = user;
+          return res.json(sanitizedUser);
+        }
       }
+      // Si no hay sesión o el usuario no existe, devolver 401
+      res.status(401).json({ error: "Not authenticated" });
+    } catch (error) {
+      // En caso de error, devolver 401
+      res.status(401).json({ error: "Not authenticated" });
     }
-    res.status(401).json({ error: "Not authenticated" });
   });
 
   // Orders
