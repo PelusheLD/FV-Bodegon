@@ -31,8 +31,11 @@ const statusMap = {
 };
 
 export default function AdminOrders() {
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
+  const { data: orders = [], isLoading, isFetching } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+    refetchInterval: 5000, // Actualizar cada 5 segundos
+    refetchOnWindowFocus: true, // Actualizar cuando la ventana recupera el foco
+    staleTime: 0, // Los datos siempre se consideran obsoletos para forzar actualización
   });
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -43,7 +46,9 @@ export default function AdminOrders() {
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
       apiRequest(`/api/orders/${id}/status`, { method: 'PATCH', body: { status } }),
     onSuccess: () => {
+      // Invalidar y refetch inmediatamente para mostrar los cambios
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.refetchQueries({ queryKey: ['/api/orders'] });
       toast({ title: "Estado actualizado" });
     },
   });
@@ -64,9 +69,17 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-display font-semibold">Gestión de Pedidos</h2>
-        <p className="text-muted-foreground">Administra y actualiza el estado de los pedidos</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-display font-semibold">Gestión de Pedidos</h2>
+          <p className="text-muted-foreground">Administra y actualiza el estado de los pedidos</p>
+        </div>
+        {isFetching && !isLoading && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+            <span>Actualizando...</span>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4">
