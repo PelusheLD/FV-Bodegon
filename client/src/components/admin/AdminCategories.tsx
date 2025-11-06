@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildApiUrl } from "@/lib/queryClient";
 import type { Category, Product } from "@shared/schema";
 
 export default function AdminCategories() {
@@ -59,7 +59,9 @@ export default function AdminCategories() {
     try {
       setLoadingMore(prev => ({ ...prev, [categoryId]: true }));
       
-      const response = await fetch(`/api/admin/products/category/${categoryId}?page=${page}&limit=200`);
+      const response = await fetch(buildApiUrl(`/api/admin/products/category/${categoryId}?page=${page}&limit=200`), {
+        credentials: 'include',
+      });
       const data = await response.json();
       
       if (append) {
@@ -109,9 +111,10 @@ export default function AdminCategories() {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch(buildApiUrl('/api/upload'), {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {

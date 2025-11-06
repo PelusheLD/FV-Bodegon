@@ -14,8 +14,14 @@ interface ApiRequestOptions {
 }
 
 // Función helper para construir URLs de API
-function buildApiUrl(path: string): string {
+export function buildApiUrl(path: string): string {
   const baseUrl = import.meta.env.VITE_API_URL || '';
+  
+  // Si no hay baseUrl configurado, mostrar error en desarrollo
+  if (!baseUrl && import.meta.env.DEV) {
+    console.error('VITE_API_URL no está configurado. Las peticiones API fallarán.');
+  }
+  
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseUrl}${cleanPath}`;
 }

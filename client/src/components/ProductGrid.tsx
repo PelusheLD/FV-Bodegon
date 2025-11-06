@@ -3,6 +3,7 @@ import { ArrowLeft, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductCard from "./ProductCard";
+import { buildApiUrl } from "@/lib/queryClient";
 import type { Product, Category, SiteSettings } from "@shared/schema";
 
 interface ProductGridProps {
@@ -34,14 +35,15 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
     setLoading(true);
     try {
       // Construir URL con parámetros de búsqueda si existe
-      const baseUrl = import.meta.env.VITE_API_URL || '';
       const url = search.trim() 
-        ? `${baseUrl}/api/products/category/${categoryId}?page=${page}&limit=100&search=${encodeURIComponent(search)}`
-        : `${baseUrl}/api/products/category/${categoryId}?page=${page}&limit=100`;
+        ? buildApiUrl(`/api/products/category/${categoryId}?page=${page}&limit=100&search=${encodeURIComponent(search)}`)
+        : buildApiUrl(`/api/products/category/${categoryId}?page=${page}&limit=100`);
       
       console.log('ProductGrid: Loading products from:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -88,16 +90,18 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   useEffect(() => {
     const loadData = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || '';
-        
         // Cargar categorías
-        const categoriesResponse = await fetch(`${baseUrl}/api/categories`);
+        const categoriesResponse = await fetch(buildApiUrl('/api/categories'), {
+          credentials: 'include',
+        });
         const categories = await categoriesResponse.json();
         const currentCategory = categories.find((c: Category) => c.id === categoryId);
         setCategory(currentCategory || null);
 
         // Cargar settings
-        const settingsResponse = await fetch(`${baseUrl}/api/settings`);
+        const settingsResponse = await fetch(buildApiUrl('/api/settings'), {
+          credentials: 'include',
+        });
         const settingsData = await settingsResponse.json();
         setSettings(settingsData);
       } catch (error) {

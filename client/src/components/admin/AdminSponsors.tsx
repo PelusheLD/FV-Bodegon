@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildApiUrl } from "@/lib/queryClient";
 import type { Sponsor } from "@shared/schema";
 
 export default function AdminSponsors() {
@@ -92,8 +92,7 @@ export default function AdminSponsors() {
       const formData = new FormData();
       formData.append('image', imageFile);
       
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${baseUrl}/api/upload`, {
+      const response = await fetch(buildApiUrl('/api/upload'), {
         method: 'POST',
         body: formData,
         credentials: 'include',
