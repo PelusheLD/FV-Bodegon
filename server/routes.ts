@@ -418,11 +418,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", async (req, res) => {
-    req.session?.destroy((err: Error | null) => {
-      if (err) {
-        return res.status(500).json({ error: "Logout failed" });
+    return new Promise<void>((resolve) => {
+      if (req.session) {
+        const sessionCookieName = req.session.cookie.name || 'connect.sid';
+        req.session.destroy((err: Error | null) => {
+          if (err) {
+            res.status(500).json({ error: "Logout failed" });
+            resolve();
+            return;
+          }
+          // Limpiar la cookie de sesión usando el nombre correcto
+          res.clearCookie(sessionCookieName, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: 'lax',
+            path: '/'
+          });
+          res.status(204).send();
+          resolve();
+        });
+      } else {
+        // Si no hay sesión, limpiar la cookie por si acaso
+        res.clearCookie('connect.sid', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: 'lax',
+          path: '/'
+        });
+        res.status(204).send();
+        resolve();
       }
-      res.status(204).send();
     });
   });
 

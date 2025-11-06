@@ -19,15 +19,17 @@ function Router() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        await apiRequest('/api/auth/session');
-        setIsAdminAuthenticated(true);
-        // Si estamos en una ruta de admin pero no estábamos autenticados, ya no necesitamos redirigir
-        // porque ahora estamos autenticados
+        const user = await apiRequest('/api/auth/session');
+        if (user && user.id) {
+          setIsAdminAuthenticated(true);
+        } else {
+          setIsAdminAuthenticated(false);
+        }
       } catch (error) {
         setIsAdminAuthenticated(false);
         // Si estamos en /admin y no hay sesión, redirigir a login
         const currentPath = window.location.pathname;
-        if (currentPath.startsWith('/admin')) {
+        if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
           setLocation('/admin/login');
         }
       } finally {
@@ -44,12 +46,19 @@ function Router() {
   };
 
   const handleAdminLogout = async () => {
+    // Limpiar estado inmediatamente
+    setIsAdminAuthenticated(false);
+    
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
     } catch (error) {
-      // Ignorar errores en logout
+      // Ignorar errores en logout, pero continuar con la limpieza
     }
-    setIsAdminAuthenticated(false);
+    
+    // Limpiar todas las queries del cache
+    queryClient.clear();
+    
+    // Redirigir a la página principal
     setLocation("/");
   };
 
