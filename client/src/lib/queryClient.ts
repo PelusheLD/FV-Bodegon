@@ -26,7 +26,10 @@ export async function apiRequest(
 ): Promise<any> {
   const { method = 'GET', body, headers = {} } = options;
   
-  const res = await fetch(url, {
+  // Construir la URL completa usando buildApiUrl
+  const fullUrl = buildApiUrl(url);
+  
+  const res = await fetch(fullUrl, {
     method,
     headers: body ? { "Content-Type": "application/json", ...headers } : headers,
     body: body ? JSON.stringify(body) : undefined,
