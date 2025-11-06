@@ -18,10 +18,11 @@ app.use(cors({
   origin: [
     'http://localhost:5173', // Vite dev server
     'https://fv-bodegon-frontend.onrender.com', // Frontend en Render
-    'https://fv-bodegon.onrender.com' // Backend en Render (por si acaso)
+    'https://fv-bodegon.onrender.com', // Backend en Render (por si acaso)
+    'https://fv-bodegon.vercel.app' // Frontend en Vercel
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID']
 }));
 
