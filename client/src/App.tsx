@@ -13,15 +13,20 @@ import { apiRequest } from "./lib/queryClient";
 function Router() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
-  // Verificar sesión al cargar la aplicación
+  // Verificar sesión al cargar la aplicación y cuando cambia la ruta
   useEffect(() => {
     const checkSession = async () => {
       try {
         const user = await apiRequest('/api/auth/session');
         if (user && user.id) {
           setIsAdminAuthenticated(true);
+          // Si estamos en /admin/login y estamos autenticados, redirigir a /admin
+          const currentPath = window.location.pathname;
+          if (currentPath === '/admin/login') {
+            setLocation('/admin');
+          }
         } else {
           setIsAdminAuthenticated(false);
         }
@@ -39,6 +44,37 @@ function Router() {
 
     checkSession();
   }, [setLocation]);
+
+  // Verificar sesión también cuando cambia la ruta a /admin (después de la verificación inicial)
+  useEffect(() => {
+    if (!isCheckingSession && location.startsWith('/admin')) {
+      const verifySession = async () => {
+        try {
+          const user = await apiRequest('/api/auth/session');
+          if (user && user.id) {
+            setIsAdminAuthenticated(true);
+            // Si estamos en /admin/login y estamos autenticados, redirigir
+            if (location === '/admin/login') {
+              setLocation('/admin');
+            }
+          } else {
+            setIsAdminAuthenticated(false);
+            // Si estamos en /admin pero no en login, redirigir a login
+            if (location !== '/admin/login') {
+              setLocation('/admin/login');
+            }
+          }
+        } catch (error) {
+          setIsAdminAuthenticated(false);
+          // Si estamos en /admin pero no en login, redirigir a login
+          if (location !== '/admin/login') {
+            setLocation('/admin/login');
+          }
+        }
+      };
+      verifySession();
+    }
+  }, [location, isCheckingSession, setLocation]);
 
   const handleAdminLogin = () => {
     setIsAdminAuthenticated(true);

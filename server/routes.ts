@@ -427,11 +427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             resolve();
             return;
           }
-          // Limpiar la cookie de sesión usando el nombre correcto
+          // Limpiar la cookie de sesión usando el nombre correcto y la misma configuración
           res.clearCookie(sessionCookieName, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
             path: '/'
           });
           res.status(204).send();
@@ -442,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.clearCookie('connect.sid', {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          sameSite: 'lax',
+          sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
           path: '/'
         });
         res.status(204).send();

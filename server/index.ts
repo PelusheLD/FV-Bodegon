@@ -40,8 +40,10 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production", // true en producción para HTTPS
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax', // 'none' para cross-origin en producción
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
+      // No especificar domain para que funcione entre dominios diferentes
     },
   })
 );
