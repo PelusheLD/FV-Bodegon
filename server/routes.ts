@@ -407,21 +407,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (req.session) {
-            req.session.userId = user.id;
-            req.session.username = user.username;
-            req.session.role = user.role;
-            
-            // Guardar la sesión explícitamente antes de responder
-            req.session.save((err: Error | null) => {
+            // Regenerar el ID de sesión para seguridad y para asegurar que se establezca la cookie
+            req.session.regenerate((err: Error | null) => {
               if (err) {
-                res.status(500).json({ error: "Failed to save session" });
+                res.status(500).json({ error: "Failed to regenerate session" });
                 resolve();
                 return;
               }
               
-              const { password: _, ...sanitizedUser } = user;
-              res.json(sanitizedUser);
-              resolve();
+              // Establecer los datos de la sesión después de regenerar
+              req.session!.userId = user.id;
+              req.session!.username = user.username;
+              req.session!.role = user.role;
+              
+              // Asegurar que la cookie se establezca con los parámetros correctos
+              if (req.session?.cookie) {
+                req.session.cookie.httpOnly = true;
+                req.session.cookie.secure = process.env.NODE_ENV === "production";
+                req.session.cookie.sameSite = (process.env.NODE_ENV === "production" ? 'none' : 'lax') as 'none' | 'lax' | 'strict';
+                req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 7; // 7 días
+                req.session.cookie.path = '/';
+              }
+              
+              // Guardar la sesión explícitamente antes de responder
+              req.session!.save((saveErr: Error | null) => {
+                if (saveErr) {
+                  res.status(500).json({ error: "Failed to save session" });
+                  resolve();
+                  return;
+                }
+                
+                // Log para debugging (solo en desarrollo)
+                if (process.env.NODE_ENV !== "production") {
+                  console.log("Login successful:", {
+                    userId: user.id,
+                    sessionId: req.sessionID,
+                    cookieName: req.session?.cookie?.name
+                  });
+                }
+                
+                const { password: _, ...sanitizedUser } = user;
+                res.json(sanitizedUser);
+                resolve();
+              });
             });
           } else {
             res.status(500).json({ error: "Session not available" });
@@ -474,6 +502,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/session", async (req, res) => {
     try {
+      // Log para debugging (solo en desarrollo)
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Session check:", {
+          hasSession: !!req.session,
+          userId: req.session?.userId,
+          cookie: req.headers.cookie,
+          sessionId: req.sessionID
+        });
+      }
+      
       if (req.session?.userId) {
         const user = await storage.getAdminUserById(req.session.userId);
         if (user) {
