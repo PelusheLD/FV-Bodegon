@@ -135,7 +135,9 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
           const url = `${baseUrl}/api/products/category/${categoryId}?page=1&limit=100`;
           console.log('ProductGrid: Loading initial products from:', url);
           
-          const response = await fetch(url);
+          const response = await fetch(url, {
+            credentials: 'include',
+          });
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
