@@ -131,8 +131,7 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
       // Cargar productos directamente sin usar loadProducts para evitar loops
       const loadInitialProducts = async () => {
         try {
-          const baseUrl = import.meta.env.VITE_API_URL || '';
-          const url = `${baseUrl}/api/products/category/${categoryId}?page=1&limit=100`;
+          const url = buildApiUrl(`/api/products/category/${categoryId}?page=1&limit=100`);
           console.log('ProductGrid: Loading initial products from:', url);
           
           const response = await fetch(url, {
