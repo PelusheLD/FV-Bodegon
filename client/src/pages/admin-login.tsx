@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, setToken } from "@/lib/queryClient";
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -22,33 +22,20 @@ export default function AdminLoginPage({ onLogin }: AdminLoginProps) {
     setIsLoading(true);
 
     try {
-      const user = await apiRequest('/api/auth/login', {
+      const response = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: { username, password },
       });
 
-      // Esperar un momento para asegurar que la cookie se haya establecido
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Verificar que la sesión se haya establecido correctamente
-      try {
-        const sessionUser = await apiRequest('/api/auth/session');
-        if (sessionUser && sessionUser.id) {
-          toast({
-            title: "Inicio de sesión exitoso",
-            description: "Bienvenido al panel administrativo",
-          });
-          onLogin();
-        } else {
-          throw new Error("La sesión no se estableció correctamente");
-        }
-      } catch (sessionError) {
-        // Si la verificación de sesión falla, mostrar error
+      if (response.token) {
+        setToken(response.token);
         toast({
-          title: "Error de sesión",
-          description: "No se pudo establecer la sesión. Por favor, intenta de nuevo.",
-          variant: "destructive",
+          title: "Inicio de sesión exitoso",
+          description: "Bienvenido al panel administrativo",
         });
+        onLogin();
+      } else {
+        throw new Error("No se recibió el token de autenticación");
       }
     } catch (error) {
       toast({

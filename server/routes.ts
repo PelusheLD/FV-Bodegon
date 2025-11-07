@@ -4,9 +4,10 @@ import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertAdminUserSchema, insertSiteSettingsSchema, insertOrderSchema, insertOrderItemSchema, insertSponsorSchema } from "@shared/schema";
 import { z } from "zod";
 import { upload, uploadExcel } from "./upload";
+import { generateToken, verifyToken, authMiddleware } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.post("/api/upload", upload.single('image'), async (req, res) => {
+  app.post("/api/upload", authMiddleware, upload.single('image'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No se proporcionó ninguna imagen" });
@@ -40,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/categories", async (req, res) => {
+  app.post("/api/categories", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(validatedData);
@@ -53,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/categories/:id", async (req, res) => {
+  app.put("/api/categories/:id", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertCategorySchema.partial().parse(req.body);
       const category = await storage.updateCategory(req.params.id, validatedData);
@@ -69,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/categories/:id", async (req, res) => {
+  app.delete("/api/categories/:id", authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -149,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint paginado para admin
-  app.get("/api/admin/products/category/:categoryId", async (req, res) => {
+  app.get("/api/admin/products/category/:categoryId", authMiddleware, async (req, res) => {
     try {
       const { categoryId } = req.params;
       const page = parseInt(req.query.page as string) || 1;
@@ -163,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint para conteos de productos por categoría
-  app.get("/api/admin/products/counts", async (req, res) => {
+  app.get("/api/admin/products/counts", authMiddleware, async (req, res) => {
     try {
       const counts = await storage.getProductCountsByCategory();
       res.json(counts);
@@ -217,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Excel Import con progreso
-  app.post("/api/products/import-excel", uploadExcel.single('excel'), async (req, res) => {
+  app.post("/api/products/import-excel", authMiddleware, uploadExcel.single('excel'), async (req, res) => {
     const sessionId = req.headers['x-session-id'] as string || `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     try {
@@ -237,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
@@ -250,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/products/:id", async (req, res) => {
+  app.put("/api/products/:id", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertProductSchema.partial().parse(req.body);
       const product = await storage.updateProduct(req.params.id, validatedData);
@@ -266,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/products/:id", async (req, res) => {
+  app.delete("/api/products/:id", authMiddleware, async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);
       res.status(204).send();
@@ -276,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Users
-  app.get("/api/admin/users", async (_req, res) => {
+  app.get("/api/admin/users", authMiddleware, async (_req, res) => {
     try {
       const users = await storage.getAdminUsers();
       const sanitizedUsers = users.map(({ password, ...user }) => user);
@@ -286,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/users", async (req, res) => {
+  app.post("/api/admin/users", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertAdminUserSchema.parse(req.body);
       const user = await storage.createAdminUser(validatedData);
@@ -300,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/users/:id", async (req, res) => {
+  app.put("/api/admin/users/:id", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertAdminUserSchema.partial().parse(req.body);
       const user = await storage.updateAdminUser(req.params.id, validatedData);
@@ -317,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/users/:id", async (req, res) => {
+  app.delete("/api/admin/users/:id", authMiddleware, async (req, res) => {
     try {
       await storage.deleteAdminUser(req.params.id);
       res.status(204).send();
@@ -363,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/settings", async (req, res) => {
+  app.put("/api/settings", authMiddleware, async (req, res) => {
     try {
       console.log("Settings update request body:", req.body);
       
@@ -396,115 +397,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication
   app.post("/api/auth/login", async (req, res) => {
-    return new Promise<void>((resolve) => {
-      try {
-        const { username, password } = req.body;
-        storage.getAdminUserByUsername(username).then((user) => {
-          if (!user || user.password !== password) {
-            res.status(401).json({ error: "Invalid credentials" });
-            resolve();
-            return;
-          }
-
-          if (req.session) {
-            // Establecer los datos de la sesión directamente
-            req.session.userId = user.id;
-            req.session.username = user.username;
-            req.session.role = user.role;
-            
-            // Guardar la sesión explícitamente antes de responder
-            req.session.save((saveErr: Error | null) => {
-              if (saveErr) {
-                console.error("Error saving session:", saveErr);
-                res.status(500).json({ error: "Failed to save session" });
-                resolve();
-                return;
-              }
-              
-              const { password: _, ...sanitizedUser } = user;
-              res.json(sanitizedUser);
-              resolve();
-            });
-          } else {
-            res.status(500).json({ error: "Session not available" });
-            resolve();
-          }
-        }).catch((error) => {
-          res.status(500).json({ error: "Login failed" });
-          resolve();
-        });
-      } catch (error) {
-        res.status(500).json({ error: "Login failed" });
-        resolve();
-      }
-    });
-  });
-
-  app.post("/api/auth/logout", async (req, res) => {
-    return new Promise<void>((resolve) => {
-      if (req.session) {
-        const sessionCookieName = req.session.cookie.name || 'connect.sid';
-        req.session.destroy((err: Error | null) => {
-          if (err) {
-            res.status(500).json({ error: "Logout failed" });
-            resolve();
-            return;
-          }
-          // Limpiar la cookie de sesión usando el nombre correcto y la misma configuración
-          res.clearCookie(sessionCookieName, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-            path: '/'
-          });
-          res.status(204).send();
-          resolve();
-        });
-      } else {
-        // Si no hay sesión, limpiar la cookie por si acaso
-        res.clearCookie('connect.sid', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-          path: '/'
-        });
-        res.status(204).send();
-        resolve();
-      }
-    });
-  });
-
-  app.get("/api/auth/session", async (req, res) => {
     try {
-      // Log para debugging (también en producción para diagnosticar)
-      console.log("Session check:", {
-        hasSession: !!req.session,
-        userId: req.session?.userId,
-        cookie: req.headers.cookie,
-        sessionId: req.sessionID,
-        origin: req.headers.origin,
-        referer: req.headers.referer
-      });
+      const { username, password } = req.body;
+      const user = await storage.getAdminUserByUsername(username);
       
-      if (req.session?.userId) {
-        const user = await storage.getAdminUserById(req.session.userId);
-        if (user) {
-          const { password, ...sanitizedUser } = user;
-          return res.json(sanitizedUser);
-        }
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
       }
-      // Si no hay sesión o el usuario no existe, devolver 401
-      console.log("Session check failed: No valid session");
-      res.status(401).json({ error: "Not authenticated" });
+
+      const token = generateToken({
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+      });
+
+      const { password: _, ...sanitizedUser } = user;
+      res.json({ ...sanitizedUser, token });
     } catch (error) {
-      // En caso de error, devolver 401
-      console.log("Session check error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (_req, res) => {
+    res.status(204).send();
+  });
+
+  app.get("/api/auth/session", authMiddleware, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const dbUser = await storage.getAdminUserById(user.userId);
+      
+      if (!dbUser) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const { password, ...sanitizedUser } = dbUser;
+      res.json(sanitizedUser);
+    } catch (error) {
       res.status(401).json({ error: "Not authenticated" });
     }
   });
 
   // Orders
-  app.get("/api/orders", async (_req, res) => {
+  app.get("/api/orders", authMiddleware, async (_req, res) => {
     try {
       const orders = await storage.getOrders();
       res.json(orders);
@@ -513,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders/:id", async (req, res) => {
+  app.get("/api/orders/:id", authMiddleware, async (req, res) => {
     try {
       const order = await storage.getOrderById(req.params.id);
       if (!order) {
@@ -551,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/orders/:id/status", async (req, res) => {
+  app.patch("/api/orders/:id/status", authMiddleware, async (req, res) => {
     try {
       const { status } = req.body;
       if (!status) {
@@ -569,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders/:id/items", async (req, res) => {
+  app.get("/api/orders/:id/items", authMiddleware, async (req, res) => {
     try {
       const items = await storage.getOrderItems(req.params.id);
       res.json(items);
@@ -601,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sponsors", async (req, res) => {
+  app.post("/api/sponsors", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertSponsorSchema.parse(req.body);
       const sponsor = await storage.createSponsor(validatedData);
@@ -614,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sponsors/:id", async (req, res) => {
+  app.put("/api/sponsors/:id", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertSponsorSchema.partial().parse(req.body);
       const sponsor = await storage.updateSponsor(req.params.id, validatedData);
@@ -630,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sponsors/:id", async (req, res) => {
+  app.delete("/api/sponsors/:id", authMiddleware, async (req, res) => {
     try {
       await storage.deleteSponsor(req.params.id);
       res.status(204).send();

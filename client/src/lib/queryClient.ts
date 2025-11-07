@@ -26,6 +26,18 @@ export function buildApiUrl(path: string): string {
   return `${baseUrl}${cleanPath}`;
 }
 
+export function getToken(): string | null {
+  return localStorage.getItem('auth_token');
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem('auth_token', token);
+}
+
+export function removeToken(): void {
+  localStorage.removeItem('auth_token');
+}
+
 export async function apiRequest(
   url: string,
   options: ApiRequestOptions = {},
@@ -35,11 +47,22 @@ export async function apiRequest(
   // Construir la URL completa usando buildApiUrl
   const fullUrl = buildApiUrl(url);
   
+  // Obtener el token del localStorage
+  const token = getToken();
+  const authHeaders: Record<string, string> = {};
+  
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
+  
   const res = await fetch(fullUrl, {
     method,
-    headers: body ? { "Content-Type": "application/json", ...headers } : headers,
+    headers: {
+      ...(body ? { "Content-Type": "application/json" } : {}),
+      ...authHeaders,
+      ...headers,
+    },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -63,8 +86,15 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const url = buildApiUrl(queryKey.join("/") as string);
+    const token = getToken();
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const res = await fetch(url, {
-      credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

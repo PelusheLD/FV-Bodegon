@@ -8,16 +8,27 @@ import HomePage from "@/pages/home";
 import AdminLoginPage from "@/pages/admin-login";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import { apiRequest } from "./lib/queryClient";
+import { apiRequest, getToken, removeToken } from "./lib/queryClient";
 
 function Router() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [location, setLocation] = useLocation();
 
-  // Verificar sesión al cargar la aplicación y cuando cambia la ruta
+  // Verificar sesión al cargar la aplicación
   useEffect(() => {
     const checkSession = async () => {
+      const token = getToken();
+      if (!token) {
+        setIsAdminAuthenticated(false);
+        setIsCheckingSession(false);
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
+          setLocation('/admin/login');
+        }
+        return;
+      }
+
       try {
         const user = await apiRequest('/api/auth/session');
         if (user && user.id) {
@@ -29,13 +40,13 @@ function Router() {
           }
         } else {
           setIsAdminAuthenticated(false);
+          removeToken();
         }
       } catch (error: any) {
-        // Solo establecer como no autenticado si es un error 401
-        // Otros errores (red, servidor, etc.) no deberían cambiar el estado
+        // Si es un error 401, eliminar el token y redirigir a login
         if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
           setIsAdminAuthenticated(false);
-          // Si estamos en /admin y no hay sesión, redirigir a login
+          removeToken();
           const currentPath = window.location.pathname;
           if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
             setLocation('/admin/login');
@@ -52,6 +63,15 @@ function Router() {
   // Verificar sesión también cuando cambia la ruta a /admin (después de la verificación inicial)
   useEffect(() => {
     if (!isCheckingSession && location.startsWith('/admin')) {
+      const token = getToken();
+      if (!token) {
+        setIsAdminAuthenticated(false);
+        if (location !== '/admin/login') {
+          setLocation('/admin/login');
+        }
+        return;
+      }
+
       const verifySession = async () => {
         try {
           const user = await apiRequest('/api/auth/session');
@@ -63,16 +83,16 @@ function Router() {
             }
           } else {
             setIsAdminAuthenticated(false);
-            // Si estamos en /admin pero no en login, redirigir a login
+            removeToken();
             if (location !== '/admin/login') {
               setLocation('/admin/login');
             }
           }
         } catch (error: any) {
-          // Solo establecer como no autenticado si es un error 401
+          // Si es un error 401, eliminar el token y redirigir a login
           if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
             setIsAdminAuthenticated(false);
-            // Si estamos en /admin pero no en login, redirigir a login
+            removeToken();
             if (location !== '/admin/login') {
               setLocation('/admin/login');
             }
@@ -91,6 +111,7 @@ function Router() {
   const handleAdminLogout = async () => {
     // Limpiar estado inmediatamente
     setIsAdminAuthenticated(false);
+    removeToken();
     
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
