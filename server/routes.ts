@@ -218,6 +218,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Excel Import con progreso
+  // Manejar preflight OPTIONS para CORS
+  app.options("/api/products/import-excel", (_req, res) => {
+    res.status(200).end();
+  });
+  
   app.post("/api/products/import-excel", authMiddleware, uploadExcel.single('excel'), async (req, res) => {
     const sessionId = req.headers['x-session-id'] as string || `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -234,6 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId
       });
     } catch (error: any) {
+      console.error('Error en importación Excel:', error);
       res.status(500).json({ error: error.message || "Error al importar productos" });
     }
   });
