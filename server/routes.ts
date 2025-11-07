@@ -407,55 +407,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (req.session) {
-            // Regenerar el ID de sesión para seguridad y para asegurar que se establezca la cookie
-            req.session.regenerate((err: Error | null) => {
-              if (err) {
-                res.status(500).json({ error: "Failed to regenerate session" });
+            // Establecer los datos de la sesión directamente
+            req.session.userId = user.id;
+            req.session.username = user.username;
+            req.session.role = user.role;
+            
+            // Guardar la sesión explícitamente antes de responder
+            req.session.save((saveErr: Error | null) => {
+              if (saveErr) {
+                console.error("Error saving session:", saveErr);
+                res.status(500).json({ error: "Failed to save session" });
                 resolve();
                 return;
               }
               
-              // Establecer los datos de la sesión después de regenerar
-              req.session!.userId = user.id;
-              req.session!.username = user.username;
-              req.session!.role = user.role;
-              
-              // Asegurar que la cookie se establezca con los parámetros correctos
-              if (req.session?.cookie) {
-                req.session.cookie.httpOnly = true;
-                req.session.cookie.secure = process.env.NODE_ENV === "production";
-                req.session.cookie.sameSite = (process.env.NODE_ENV === "production" ? 'none' : 'lax') as 'none' | 'lax' | 'strict';
-                req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 7; // 7 días
-                req.session.cookie.path = '/';
-              }
-              
-              // Guardar la sesión explícitamente antes de responder
-              req.session!.save((saveErr: Error | null) => {
-                if (saveErr) {
-                  res.status(500).json({ error: "Failed to save session" });
-                  resolve();
-                  return;
-                }
-                
-                // Log para debugging (también en producción para diagnosticar)
-                console.log("Login successful:", {
-                  userId: user.id,
-                  sessionId: req.sessionID,
-                  cookieName: req.session?.cookie?.name,
-                  cookieSecure: req.session?.cookie?.secure,
-                  cookieSameSite: req.session?.cookie?.sameSite,
-                  origin: req.headers.origin,
-                  cookieHeader: req.headers.cookie
-                });
-                
-                // Verificar que la cookie se establezca en la respuesta
-                const setCookieHeader = res.getHeader('Set-Cookie');
-                console.log("Set-Cookie header:", setCookieHeader);
-                
-                const { password: _, ...sanitizedUser } = user;
-                res.json(sanitizedUser);
-                resolve();
-              });
+              const { password: _, ...sanitizedUser } = user;
+              res.json(sanitizedUser);
+              resolve();
             });
           } else {
             res.status(500).json({ error: "Session not available" });
