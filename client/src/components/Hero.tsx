@@ -149,14 +149,6 @@ export default function Hero({ carouselData }: HeroProps) {
       {/* Overlay oscuro + degradado para mejorar contraste */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70" />
       
-      {/* Degradado inferior para transición suave */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-white pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,1) 100%)',
-        }}
-      />
-      
       {/* Contenido del carrusel */}
       <div className="relative h-full flex flex-col items-center justify-center px-4 text-center">
         {/* Slide actual del carrusel */}
