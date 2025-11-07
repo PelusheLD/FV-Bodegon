@@ -29,7 +29,7 @@ async function runSessionMigration() {
   } catch (error) {
     // Si la tabla ya existe, no es un error crítico
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorCode = (error as any)?.code;
+    const errorCode = error?.code;
     if (errorMessage?.includes('already exists') || errorCode === '42P07') {
       console.log('ℹ️ Tabla de sesiones ya existe, continuando...');
     } else {
