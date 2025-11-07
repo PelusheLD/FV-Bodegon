@@ -144,14 +144,16 @@ export default function Hero({ carouselData }: HeroProps) {
           backgroundPosition: 'center 70%',
           filter: 'blur(6px)',
           transform: 'scale(1.05)',
-          clipPath: 'polygon(0 0, 100% 0, 100% 88%, 98% 90%, 95% 92%, 90% 94%, 85% 95%, 80% 96%, 70% 97%, 60% 97.5%, 50% 98%, 40% 97.5%, 30% 97%, 20% 96%, 15% 95%, 10% 94%, 5% 92%, 2% 90%, 0 88%)',
         }}
       />
       {/* Overlay oscuro + degradado para mejorar contraste */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70" />
+      
+      {/* Degradado inferior para transición suave */}
       <div 
-        className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70"
+        className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-white pointer-events-none"
         style={{
-          clipPath: 'polygon(0 0, 100% 0, 100% 88%, 98% 90%, 95% 92%, 90% 94%, 85% 95%, 80% 96%, 70% 97%, 60% 97.5%, 50% 98%, 40% 97.5%, 30% 97%, 20% 96%, 15% 95%, 10% 94%, 5% 92%, 2% 90%, 0 88%)',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,1) 100%)',
         }}
       />
       
