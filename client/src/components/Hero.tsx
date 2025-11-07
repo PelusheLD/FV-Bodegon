@@ -96,10 +96,11 @@ export default function Hero({ carouselData }: HeroProps) {
   useEffect(() => {
     if (nextSlide !== currentSlide) {
       setIsTransitioning(true);
+      // Esperar a que termine la transición completa antes de actualizar currentSlide
       const timer = setTimeout(() => {
         setCurrentSlide(nextSlide);
         setIsTransitioning(false);
-      }, 500); // Mitad de la duración de la transición
+      }, 2000); // Duración completa de la transición (2000ms)
       return () => clearTimeout(timer);
     }
   }, [nextSlide, currentSlide]);
@@ -162,39 +163,38 @@ export default function Hero({ carouselData }: HeroProps) {
   // Determinar qué slide mostrar en cada capa
   const currentBackground = slides[currentSlide].background || '/fondo.png';
   const nextBackground = slides[nextSlide].background || '/fondo.png';
-  const showNext = isTransitioning && nextSlide !== currentSlide;
-  const displaySlide = isTransitioning ? nextSlide : currentSlide;
+  const needsTransition = nextSlide !== currentSlide;
+  const displaySlide = needsTransition ? nextSlide : currentSlide;
 
   return (
     <div className="relative h-[80vh] md:h-[90vh] overflow-hidden">
       {/* Capa de fondo actual */}
       <div
-        className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+        className="absolute inset-0 transition-opacity duration-[2000ms] ease-in-out"
         style={{
           backgroundImage: `url(${currentBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 70%',
           filter: 'blur(6px)',
           transform: 'scale(1.05)',
-          opacity: showNext ? 0 : 1,
-          zIndex: showNext ? 1 : 2,
+          opacity: needsTransition ? 0 : 1,
+          zIndex: needsTransition ? 1 : 2,
         }}
       />
       {/* Capa de fondo siguiente (para transición suave) */}
-      {showNext && (
-        <div
-          className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-          style={{
-            backgroundImage: `url(${nextBackground})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 70%',
-            filter: 'blur(6px)',
-            transform: 'scale(1.05)',
-            opacity: 1,
-            zIndex: 2,
-          }}
-        />
-      )}
+      <div
+        className="absolute inset-0 transition-opacity duration-[2000ms] ease-in-out"
+        style={{
+          backgroundImage: `url(${nextBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 70%',
+          filter: 'blur(6px)',
+          transform: 'scale(1.05)',
+          opacity: needsTransition ? 1 : 0,
+          zIndex: needsTransition ? 2 : 1,
+          pointerEvents: needsTransition ? 'auto' : 'none',
+        }}
+      />
       {/* Overlay oscuro + degradado para mejorar contraste */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70 z-10" />
       
@@ -202,7 +202,7 @@ export default function Hero({ carouselData }: HeroProps) {
       <div className="relative h-full flex flex-col items-center justify-center px-4 text-center z-20">
         {/* Slide actual del carrusel */}
         <div className="relative w-full max-w-4xl">
-          <div className="flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out">
+          <div className="flex flex-col items-center justify-center transition-opacity duration-[1500ms] ease-in-out">
             {/* Imagen del carrusel */}
             {slides[displaySlide].image && (
               <div className="mb-6">
