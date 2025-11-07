@@ -144,10 +144,16 @@ export default function Hero({ carouselData }: HeroProps) {
           backgroundPosition: 'center 70%',
           filter: 'blur(6px)',
           transform: 'scale(1.05)',
+          clipPath: 'polygon(0 0, 100% 0, 100% 88%, 98% 90%, 95% 92%, 90% 94%, 85% 95%, 80% 96%, 70% 97%, 60% 97.5%, 50% 98%, 40% 97.5%, 30% 97%, 20% 96%, 15% 95%, 10% 94%, 5% 92%, 2% 90%, 0 88%)',
         }}
       />
       {/* Overlay oscuro + degradado para mejorar contraste */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70" />
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/55 to-black/70"
+        style={{
+          clipPath: 'polygon(0 0, 100% 0, 100% 88%, 98% 90%, 95% 92%, 90% 94%, 85% 95%, 80% 96%, 70% 97%, 60% 97.5%, 50% 98%, 40% 97.5%, 30% 97%, 20% 96%, 15% 95%, 10% 94%, 5% 92%, 2% 90%, 0 88%)',
+        }}
+      />
       
       {/* Contenido del carrusel */}
       <div className="relative h-full flex flex-col items-center justify-center px-4 text-center">
