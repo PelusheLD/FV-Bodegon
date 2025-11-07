@@ -1,17 +1,41 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import "./types/session";
 import path from "path";
 import { fileURLToPath } from "url";
+import { Pool } from "pg";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Configurar pool de conexiones para el store de sesiones
+let sessionStore: connectPgSimple.PGStore | undefined;
+if (process.env.DATABASE_URL) {
+  try {
+    const pgSession = connectPgSimple(session);
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    
+    sessionStore = new pgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: false, // La tabla se crea mediante migraciones
+    });
+    
+    log('✅ Session store configurado con PostgreSQL');
+  } catch (error) {
+    log('⚠️ Error configurando session store, usando memoria: ' + (error as Error).message);
+  }
+}
 
 // Configurar CORS
 app.use(cors({
@@ -35,6 +59,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(
   session({
+    store: sessionStore || undefined, // Usar PostgreSQL store si está disponible, sino usar memoria
     secret: process.env.SESSION_SECRET || "fv-bodegones-secret-key",
     resave: false,
     saveUninitialized: false,
