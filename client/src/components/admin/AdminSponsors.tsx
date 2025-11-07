@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient, buildApiUrl } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildApiUrl, getToken } from "@/lib/queryClient";
 import type { Sponsor } from "@shared/schema";
 
 export default function AdminSponsors() {
@@ -92,10 +92,16 @@ export default function AdminSponsors() {
       const formData = new FormData();
       formData.append('image', imageFile);
       
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(buildApiUrl('/api/upload'), {
         method: 'POST',
+        headers,
         body: formData,
-        credentials: 'include',
       });
 
       if (!response.ok) {

@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient, buildApiUrl } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildApiUrl, getToken } from "@/lib/queryClient";
 import type { Category, Product } from "@shared/schema";
 
 export default function AdminCategories() {
@@ -59,9 +59,20 @@ export default function AdminCategories() {
     try {
       setLoadingMore(prev => ({ ...prev, [categoryId]: true }));
       
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(buildApiUrl(`/api/admin/products/category/${categoryId}?page=${page}&limit=200`), {
-        credentials: 'include',
+        headers,
       });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       if (append) {
@@ -111,10 +122,16 @@ export default function AdminCategories() {
     const formData = new FormData();
     formData.append('image', file);
 
+    const token = getToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(buildApiUrl('/api/upload'), {
       method: 'POST',
+      headers,
       body: formData,
-      credentials: 'include',
     });
 
     if (!response.ok) {
