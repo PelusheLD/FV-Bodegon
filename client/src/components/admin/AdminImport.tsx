@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient, buildApiUrl } from "@/lib/queryClient";
+import { apiRequest, queryClient, buildApiUrl, getToken } from "@/lib/queryClient";
 import ImportProgress from "./ImportProgress";
 
 export default function AdminImport() {
@@ -22,13 +22,19 @@ export default function AdminImport() {
       setSessionId(newSessionId);
       setIsImporting(true);
 
+      const token = getToken();
+      const headers: Record<string, string> = {
+        'X-Session-ID': newSessionId,
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(buildApiUrl('/api/products/import-excel'), {
         method: 'POST',
-        headers: {
-          'X-Session-ID': newSessionId,
-        },
+        headers,
         body: formData,
-        credentials: 'include',
       });
       
       if (!response.ok) {

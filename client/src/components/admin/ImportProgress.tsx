@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { buildApiUrl } from "@/lib/queryClient";
 
 interface ProgressData {
   type: 'connected' | 'start' | 'progress' | 'complete' | 'error';
@@ -27,7 +28,8 @@ export default function ImportProgress({ sessionId, onComplete, onError }: Impor
     if (!sessionId) return;
 
     // Crear conexión Server-Sent Events
-    const eventSource = new EventSource(`/api/products/import-progress/${sessionId}`);
+    // Nota: EventSource no soporta headers personalizados, pero este endpoint no requiere autenticación
+    const eventSource = new EventSource(buildApiUrl(`/api/products/import-progress/${sessionId}`));
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
