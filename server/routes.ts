@@ -437,14 +437,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   return;
                 }
                 
-                // Log para debugging (solo en desarrollo)
-                if (process.env.NODE_ENV !== "production") {
-                  console.log("Login successful:", {
-                    userId: user.id,
-                    sessionId: req.sessionID,
-                    cookieName: req.session?.cookie?.name
-                  });
-                }
+                // Log para debugging (también en producción para diagnosticar)
+                console.log("Login successful:", {
+                  userId: user.id,
+                  sessionId: req.sessionID,
+                  cookieName: req.session?.cookie?.name,
+                  cookieSecure: req.session?.cookie?.secure,
+                  cookieSameSite: req.session?.cookie?.sameSite,
+                  origin: req.headers.origin,
+                  cookieHeader: req.headers.cookie
+                });
+                
+                // Verificar que la cookie se establezca en la respuesta
+                const setCookieHeader = res.getHeader('Set-Cookie');
+                console.log("Set-Cookie header:", setCookieHeader);
                 
                 const { password: _, ...sanitizedUser } = user;
                 res.json(sanitizedUser);
@@ -502,15 +508,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/session", async (req, res) => {
     try {
-      // Log para debugging (solo en desarrollo)
-      if (process.env.NODE_ENV !== "production") {
-        console.log("Session check:", {
-          hasSession: !!req.session,
-          userId: req.session?.userId,
-          cookie: req.headers.cookie,
-          sessionId: req.sessionID
-        });
-      }
+      // Log para debugging (también en producción para diagnosticar)
+      console.log("Session check:", {
+        hasSession: !!req.session,
+        userId: req.session?.userId,
+        cookie: req.headers.cookie,
+        sessionId: req.sessionID,
+        origin: req.headers.origin,
+        referer: req.headers.referer
+      });
       
       if (req.session?.userId) {
         const user = await storage.getAdminUserById(req.session.userId);
@@ -520,9 +526,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       // Si no hay sesión o el usuario no existe, devolver 401
+      console.log("Session check failed: No valid session");
       res.status(401).json({ error: "Not authenticated" });
     } catch (error) {
       // En caso de error, devolver 401
+      console.log("Session check error:", error);
       res.status(401).json({ error: "Not authenticated" });
     }
   });

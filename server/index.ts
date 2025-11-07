@@ -33,7 +33,8 @@ if (process.env.DATABASE_URL) {
     
     log('✅ Session store configurado con PostgreSQL');
   } catch (error) {
-    log('⚠️ Error configurando session store, usando memoria: ' + (error as Error).message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('⚠️ Error configurando session store, usando memoria: ' + errorMessage);
   }
 }
 
