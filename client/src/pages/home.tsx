@@ -11,6 +11,7 @@ import FeaturedProducts from "@/components/FeaturedProducts";
 import ContactSection from "@/components/ContactSection";
 import MultimediaSection from "@/components/MultimediaSection";
 import SponsorsSection from "@/components/SponsorsSection";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
 import { searchProducts } from "@/lib/searchUtils";
@@ -220,6 +221,9 @@ export default function HomePage() {
       </main>
 
       <Footer settings={settings} />
+
+      {/* Botón flotante de WhatsApp */}
+      <WhatsAppButton />
 
       {/* Sidebar con Carrito y Tasa del Dólar */}
       <div className="fixed right-4 top-20 z-40 flex flex-col gap-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
