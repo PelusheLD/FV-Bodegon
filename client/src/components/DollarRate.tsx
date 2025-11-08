@@ -89,16 +89,7 @@ const DollarRate: React.FC = () => {
               <div className="pt-2 border-t">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{dollarRate.nombre}</span>
-                  <span>
-                    {dollarRate.fechaActualizacion 
-                      ? new Date(dollarRate.fechaActualizacion).toLocaleDateString('es-VE', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })
-                      : formatTime(new Date())
-                    }
-                  </span>
+                  <span>Actualizado: {formatTime(new Date())}</span>
                 </div>
               </div>
             </div>
