@@ -42,11 +42,20 @@ export default function ProductCard({
   const available = stock === undefined ? true : parseFloat(String(stock)) > 0;
   
   const { currency } = useCurrency();
-  const { convertToBolivares, formatCurrency } = useDollarRate();
+  const { convertToBolivares, formatCurrency, dollarRate } = useDollarRate();
 
   // El precio ya incluye IVA, solo lo mostramos tal como está
-  const displayPrice = parseFloat(price);
+  // Validar y parsear el precio correctamente
+  const displayPrice = price && !isNaN(parseFloat(price)) ? parseFloat(price) : 0;
   const priceInBolivares = convertToBolivares(displayPrice);
+  
+  // Debug: solo en desarrollo
+  if (process.env.NODE_ENV === 'development' && displayPrice > 0 && priceInBolivares === 0) {
+    console.warn(`Product ${id} (${name}): displayPrice=${displayPrice}, dollarRate=${dollarRate?.promedio}, priceInBolivares=${priceInBolivares}`);
+  }
+  
+  // Solo mostrar precio en BS si hay tasa válida con promedio > 0, precio en USD válido (> 0), y precio en BS calculado > 0
+  const hasValidBolivarPrice = dollarRate && dollarRate.promedio > 0 && displayPrice > 0 && priceInBolivares > 0;
 
   const handleAddClick = () => {
     if (!available) return;
@@ -97,15 +106,17 @@ export default function ProductCard({
             <p className="text-sm font-bold text-primary" data-testid={`text-product-price-${id}`}>
               {currency === 'USD' 
                 ? `$${formatCurrency(displayPrice)}${measurementType === 'weight' ? '/kg' : ''}`
-                : `Bs. ${formatCurrency(priceInBolivares, 'BS')}${measurementType === 'weight' ? '/kg' : ''}`
+                : hasValidBolivarPrice
+                  ? `Bs. ${formatCurrency(priceInBolivares, 'BS')}${measurementType === 'weight' ? '/kg' : ''}`
+                  : `$${formatCurrency(displayPrice)}${measurementType === 'weight' ? '/kg' : ''}`
               }
             </p>
-            {currency === 'USD' && (
+            {currency === 'USD' && hasValidBolivarPrice && (
               <p className="text-xs text-muted-foreground">
                 ≈ Bs. {formatCurrency(priceInBolivares, 'BS')}
               </p>
             )}
-            {currency === 'BS' && (
+            {currency === 'BS' && hasValidBolivarPrice && (
               <p className="text-xs text-muted-foreground">
                 ≈ ${formatCurrency(displayPrice)}
               </p>
@@ -142,7 +153,9 @@ export default function ProductCard({
               <p className="text-sm text-muted-foreground">
                 Precio: {currency === 'USD' 
                   ? `$${formatCurrency(displayPrice)}/kg (incluye IVA ${taxPercentage}%)`
-                  : `Bs. ${formatCurrency(priceInBolivares, 'BS')}/kg (incluye IVA ${taxPercentage}%)`
+                  : hasValidBolivarPrice
+                    ? `Bs. ${formatCurrency(priceInBolivares, 'BS')}/kg (incluye IVA ${taxPercentage}%)`
+                    : `$${formatCurrency(displayPrice)}/kg (incluye IVA ${taxPercentage}%)`
                 }
               </p>
             </div>
@@ -165,7 +178,9 @@ export default function ProductCard({
                 {' - '}
                 Precio total: {currency === 'USD' 
                   ? `$${formatCurrency((parseFloat(weight) / 1000) * displayPrice)}`
-                  : `Bs. ${formatCurrency((parseFloat(weight) / 1000) * priceInBolivares, 'BS')}`
+                  : hasValidBolivarPrice
+                    ? `Bs. ${formatCurrency((parseFloat(weight) / 1000) * priceInBolivares, 'BS')}`
+                    : `$${formatCurrency((parseFloat(weight) / 1000) * displayPrice)}`
                 }
               </p>
             </div>

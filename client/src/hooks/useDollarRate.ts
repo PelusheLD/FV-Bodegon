@@ -42,18 +42,38 @@ export const useDollarRate = () => {
         throw new Error('Error al obtener la tasa del dólar');
       }
       
-      const data: ExchangeRateResponse = await response.json();
+      const data: any = await response.json();
+      
+      // Validar que la respuesta tenga la estructura esperada y que la tasa sea válida
+      let usdRate: number | null = null;
+      
+      // Intentar diferentes estructuras de respuesta
+      if (data?.current?.usd && typeof data.current.usd === 'number') {
+        usdRate = data.current.usd;
+      } else if (data?.usd && typeof data.usd === 'number') {
+        usdRate = data.usd;
+      } else if (data?.rate && typeof data.rate === 'number') {
+        usdRate = data.rate;
+      } else if (typeof data === 'number' && data > 0) {
+        usdRate = data;
+      }
+      
+      if (!usdRate || usdRate <= 0 || isNaN(usdRate)) {
+        console.error('Invalid exchange rate data:', data);
+        throw new Error('La tasa de cambio recibida no es válida');
+      }
       
       // Adaptar la respuesta de la nueva API al formato esperado por el componente
       const adaptedRate: DollarRateData = {
         fuente: 'DolarVzla',
         nombre: 'Tasa Oficial',
-        compra: data.current.usd,
-        venta: data.current.usd,
-        promedio: data.current.usd,
-        fechaActualizacion: data.current.date,
+        compra: usdRate,
+        venta: usdRate,
+        promedio: usdRate,
+        fechaActualizacion: data?.current?.date || data?.date || new Date().toISOString(),
       };
       
+      console.log('Exchange rate fetched successfully:', adaptedRate);
       setDollarRate(adaptedRate);
       
     } catch (err) {
@@ -74,8 +94,19 @@ export const useDollarRate = () => {
   }, []);
 
   const convertToBolivares = (usdAmount: number): number => {
-    if (!dollarRate) return 0;
-    return usdAmount * dollarRate.promedio;
+    if (!dollarRate || !dollarRate.promedio || dollarRate.promedio <= 0) {
+      return 0;
+    }
+    if (!usdAmount || usdAmount <= 0 || isNaN(usdAmount)) {
+      return 0;
+    }
+    const result = usdAmount * dollarRate.promedio;
+    // Validar que el resultado sea un número válido
+    if (isNaN(result) || !isFinite(result)) {
+      console.error('Invalid conversion result:', { usdAmount, promedio: dollarRate.promedio, result });
+      return 0;
+    }
+    return result;
   };
 
   const formatCurrency = (amount: number, currency: 'USD' | 'BS' = 'USD') => {
