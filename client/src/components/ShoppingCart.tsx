@@ -10,7 +10,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { useDollarRate } from "@/hooks/useDollarRate";
+import { useDollarRate } from "@/contexts/DollarRateContext";
 import {
   Dialog,
   DialogContent,

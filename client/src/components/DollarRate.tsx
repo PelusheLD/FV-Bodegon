@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, DollarSign, ArrowLeftRight } from 'lucide-react';
-import { useDollarRate } from '@/hooks/useDollarRate';
+import { useDollarRate } from '@/contexts/DollarRateContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface DollarRateData {
