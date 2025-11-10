@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
 import type { Product, SiteSettings } from "@shared/schema";
 import { Loader2 } from "lucide-react";
-import { useDollarRate } from "@/hooks/useDollarRate";
 
 interface FeaturedProductsProps {
   onAddToCart: (product: Product, quantity: number) => void;
@@ -17,10 +16,6 @@ export default function FeaturedProducts({ onAddToCart }: FeaturedProductsProps)
     queryKey: ["/api/settings"],
   });
 
-  // Esperar a que la tasa de cambio esté disponible antes de mostrar productos
-  // Si hay error, permitir mostrar productos sin conversión a BS
-  const { dollarRate, loading: dollarRateLoading, error: dollarRateError } = useDollarRate();
-
   return (
     <section className="py-10 md:py-12">
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -28,12 +23,10 @@ export default function FeaturedProducts({ onAddToCart }: FeaturedProductsProps)
           PRODUCTOS DESTACADOS
         </h2>
         
-        {(isLoading || (dollarRateLoading && !dollarRateError)) ? (
+        {isLoading ? (
           <div className="text-center py-12">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {isLoading ? "Cargando productos destacados..." : "Cargando tasa de cambio..."}
-            </p>
+            <p className="text-muted-foreground">Cargando productos destacados...</p>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">

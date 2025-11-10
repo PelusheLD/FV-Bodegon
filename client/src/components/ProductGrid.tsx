@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import ProductCard from "./ProductCard";
 import { buildApiUrl } from "@/lib/queryClient";
 import type { Product, Category, SiteSettings } from "@shared/schema";
-import { useDollarRate } from "@/hooks/useDollarRate";
 
 interface ProductGridProps {
   categoryName: string;
@@ -25,10 +24,6 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
   const [initialLoading, setInitialLoading] = useState(true);
   const [category, setCategory] = useState<Category | null>(null);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
-
-  // Esperar a que la tasa de cambio esté disponible antes de mostrar productos
-  // Si hay error, permitir mostrar productos sin conversión a BS
-  const { dollarRate, loading: dollarRateLoading, error: dollarRateError } = useDollarRate();
 
   // Si tenemos productos pre-filtrados (búsqueda global), usarlos directamente
   const isSearchMode = preFilteredProducts !== undefined;
@@ -271,12 +266,10 @@ export default function ProductGrid({ categoryName, categoryId, onBack, onAddToC
           </div>
         </div>
 
-        {(initialLoading || (dollarRateLoading && !dollarRateError)) ? (
+        {initialLoading ? (
           <div className="text-center py-12">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {initialLoading ? "Cargando productos..." : "Cargando tasa de cambio..."}
-            </p>
+            <p className="text-muted-foreground">Cargando productos...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
