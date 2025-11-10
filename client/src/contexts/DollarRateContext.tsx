@@ -102,11 +102,8 @@ export const DollarRateProvider = ({ children }: { children: ReactNode }) => {
       const endpoint = buildApiUrl('/api/dollar-rate');
       
       const response = await fetch(endpoint, {
-        // Agregar headers para evitar caché del navegador
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
+        // Usar cache: 'no-cache' en lugar de header Cache-Control para evitar problemas CORS
+        cache: 'no-cache'
       });
       
       if (!response.ok) {
