@@ -343,6 +343,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obtener la tasa de cambio del dólar (proxy para evitar CORS)
+  app.get("/api/dollar-rate", async (_req, res) => {
+    try {
+      const response = await fetch('https://ve.dolarapi.com/v1/dolares', {
+        headers: {
+          'User-Agent': 'FV-Bodegon/1.0',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Buscar la tasa oficial (BCV o similar)
+      const officialRate = data.find((rate: any) => 
+        rate.nombre?.toLowerCase().includes('bcv') || 
+        rate.nombre?.toLowerCase().includes('oficial') ||
+        rate.fuente?.toLowerCase().includes('bcv')
+      ) || data[0]; // Si no encuentra oficial, usar la primera
+      
+      if (!officialRate || !officialRate.promedio) {
+        throw new Error('Tasa inválida recibida');
+      }
+      
+      res.json(officialRate);
+    } catch (error: any) {
+      console.error('Error fetching dollar rate:', error);
+      res.status(500).json({ 
+        error: error.message || "No se pudo obtener la tasa del dólar" 
+      });
+    }
+  });
+
   // Instagram Posts
   app.get("/api/instagram/posts", async (_req, res) => {
     try {

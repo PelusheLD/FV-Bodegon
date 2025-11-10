@@ -97,7 +97,11 @@ export const DollarRateProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('https://ve.dolarapi.com/v1/dolares', {
+      // Usar el endpoint del backend para evitar problemas de CORS
+      const { buildApiUrl } = await import('@/lib/queryClient');
+      const endpoint = buildApiUrl('/api/dollar-rate');
+      
+      const response = await fetch(endpoint, {
         // Agregar headers para evitar caché del navegador
         cache: 'no-cache',
         headers: {
@@ -114,14 +118,7 @@ export const DollarRateProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Error al obtener la tasa del dólar');
       }
       
-      const data: DollarRateData[] = await response.json();
-      
-      // Buscar la tasa oficial (BCV o similar)
-      const officialRate = data.find(rate => 
-        rate.nombre?.toLowerCase().includes('bcv') || 
-        rate.nombre?.toLowerCase().includes('oficial') ||
-        rate.fuente?.toLowerCase().includes('bcv')
-      ) || data[0]; // Si no encuentra oficial, usar la primera
+      const officialRate: DollarRateData = await response.json();
       
       // Validar que tenemos un promedio válido
       if (officialRate && typeof officialRate.promedio === 'number' && officialRate.promedio > 0) {
