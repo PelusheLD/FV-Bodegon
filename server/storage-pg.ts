@@ -299,6 +299,14 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async updateOrderPaymentConfirmed(id: string, paymentConfirmed: boolean): Promise<Order | undefined> {
+    const result = await db.update(orders)
+      .set({ paymentConfirmed, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+    return result[0];
+  }
+
   async getOrderItems(orderId: string): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   }
