@@ -17,9 +17,45 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem } from "@shared/schema";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const BANKS = [
+  { code: '0102', name: 'BANCO DE VENEZUELA' },
+  { code: '0104', name: 'BANCO VENEZOLANO DE CREDITO' },
+  { code: '0105', name: 'BANCO MERCANTIL' },
+  { code: '0108', name: 'BBVA PROVINCIAL' },
+  { code: '0114', name: 'BANCARIBE' },
+  { code: '0115', name: 'BANCO EXTERIOR' },
+  { code: '0128', name: 'BANCO CARONI' },
+  { code: '0134', name: 'BANESCO' },
+  { code: '0137', name: 'BANCO SOFITASA' },
+  { code: '0138', name: 'BANCO PLAZA' },
+  { code: '0146', name: 'BANGENTE' },
+  { code: '0151', name: 'BANCO FONDO COMUN' },
+  { code: '0156', name: '100% BANCO' },
+  { code: '0157', name: 'DELSUR BANCO UNIVERSAL' },
+  { code: '0163', name: 'BANCO DEL TESORO' },
+  { code: '0168', name: 'BANCRECER' },
+  { code: '0169', name: 'R4 BANCO MICROFINANCIERO C.A.' },
+  { code: '0171', name: 'BANCO ACTIVO' },
+  { code: '0172', name: 'BANCAMIGA BANCO UNIVERSAL, C.A.' },
+  { code: '0173', name: 'BANCO INTERNACIONAL DE DESARROLLO' },
+  { code: '0174', name: 'BANPLUS' },
+  { code: '0175', name: 'BANCO DIGITAL DE LOS TRABAJADORES, BANCO UNIVERSAL' },
+  { code: '0177', name: 'BANFANB' },
+  { code: '0178', name: 'N58 BANCO DIGITAL BANCO MICROFINANCIERO S A' },
+  { code: '0191', name: 'BANCO NACIONAL DE CREDITO' },
+];
+
+const getBankName = (code: string | null | undefined): string => {
+  if (!code) return code || '';
+  const bank = BANKS.find(b => b.code === code);
+  return bank ? bank.name : code;
+};
 
 const statusMap = {
   pending: { label: "Pendiente", icon: Clock, color: "bg-yellow-500" },
@@ -29,6 +65,8 @@ const statusMap = {
   delivered: { label: "Entregado", icon: Truck, color: "bg-green-700" },
   cancelled: { label: "Cancelado", icon: XCircle, color: "bg-red-500" },
 };
+
+const ITEMS_PER_PAGE = 15;
 
 export default function AdminOrders() {
   const { data: orders = [], isLoading, isFetching } = useQuery<Order[]>({
@@ -40,7 +78,14 @@ export default function AdminOrders() {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  // Calcular paginación
+  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedOrders = orders.slice(startIndex, endIndex);
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) =>
@@ -100,7 +145,8 @@ export default function AdminOrders() {
             </CardContent>
           </Card>
         ) : (
-          orders.map((order) => {
+          <>
+            {paginatedOrders.map((order) => {
             const statusInfo = statusMap[order.status as keyof typeof statusMap] || statusMap.pending;
             const StatusIcon = statusInfo.icon;
 
@@ -207,7 +253,7 @@ export default function AdminOrders() {
                         {order.paymentBank && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Banco emisor:</span>
-                            <span className="font-medium">{order.paymentBank}</span>
+                            <span className="font-medium">{getBankName(order.paymentBank)}</span>
                           </div>
                         )}
                         {order.paymentCI && (
