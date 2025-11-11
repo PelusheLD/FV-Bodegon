@@ -153,6 +153,10 @@ export default function ShoppingCart({
       subtotal: calculateItemPrice(item),
     }));
 
+    const docType = formData.get('paymentCIDocType') as string || '';
+    const docNumber = formData.get('paymentCI') as string || '';
+    const paymentCI = docType && docNumber ? `${docType}${docNumber}` : undefined;
+
     const orderData = {
       customerName: formData.get('customerName') as string,
       customerPhone: formData.get('customerPhone') as string,
@@ -161,7 +165,7 @@ export default function ShoppingCart({
       total: total,
       totalInBolivares: totalInBolivares,
       paymentBank: formData.get('paymentBank') as string || undefined,
-      paymentCI: formData.get('paymentCI') as string || undefined,
+      paymentCI: paymentCI,
       paymentPhone: formData.get('paymentPhone') as string || undefined,
       status: 'pending',
       items: orderItems,
@@ -646,12 +650,25 @@ export default function ShoppingCart({
                         </Select>
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="paymentCIDocType">Tipo de documento *</Label>
+                        <Select name="paymentCIDocType" required>
+                          <SelectTrigger id="paymentCIDocType" data-testid="input-payment-ci-doc-type">
+                            <SelectValue placeholder="Seleccione tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="V-">V-</SelectItem>
+                            <SelectItem value="E-">E-</SelectItem>
+                            <SelectItem value="J-">J-</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="paymentCI">Documento afiliado *</Label>
                         <Input
                           id="paymentCI"
                           name="paymentCI"
                           required
-                          placeholder="Ej: V-12345678"
+                          placeholder="Ej: 12345678"
                           data-testid="input-payment-ci"
                         />
                       </div>
