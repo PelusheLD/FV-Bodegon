@@ -316,6 +316,19 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async updateOrderPaymentConfirmed(id: string, paymentConfirmed: boolean): Promise<Order | undefined> {
+    const existing = this.orders.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      paymentConfirmed,
+      updatedAt: new Date(),
+    };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
   async getOrderItems(orderId: string): Promise<OrderItem[]> {
     return Array.from(this.orderItems.values()).filter(item => item.orderId === orderId);
   }
