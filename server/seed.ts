@@ -21,6 +21,7 @@ async function seed() {
 
   const existingSettings = await db.select().from(siteSettings).limit(1);
   if (existingSettings.length === 0) {
+    // Solo insertar campos que existen en todas las versiones de la base de datos
     await db.insert(siteSettings).values({
       siteName: 'FV BODEGONES',
       siteDescription: 'Tu bodega de confianza para productos de consumo diario',
@@ -30,7 +31,12 @@ async function seed() {
       facebookUrl: '#',
       instagramUrl: '#',
       twitterUrl: '#',
-    });
+      // Campos de pago (pueden no existir si la migración no se ha ejecutado)
+      paymentBank: 'Banplus',
+      paymentCI: 'J-503280280',
+      paymentPhone: '04245775917',
+      paymentInstructions: 'IMPORTANTE: Indicar número de teléfono, banco, cédula titular del pago móvil para confirmar.',
+    } as any); // Usar 'as any' para evitar errores de tipo si las columnas no existen aún
     console.log('✓ Created default site settings');
   } else {
     console.log('✓ Site settings already exist');
