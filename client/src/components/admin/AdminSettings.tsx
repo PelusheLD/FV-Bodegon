@@ -229,7 +229,7 @@ export default function AdminSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentCI">Cédula del Titular</Label>
+              <Label htmlFor="paymentCI">Documento</Label>
               <Input
                 id="paymentCI"
                 name="paymentCI"
@@ -240,7 +240,7 @@ export default function AdminSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentPhone">Teléfono para Pago Móvil</Label>
+              <Label htmlFor="paymentPhone">Telefono</Label>
               <Input
                 id="paymentPhone"
                 name="paymentPhone"

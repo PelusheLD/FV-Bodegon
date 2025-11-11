@@ -558,11 +558,11 @@ export default function ShoppingCart({
                       <span className="font-medium">{settings.paymentBank}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cédula:</span>
+                      <span className="text-muted-foreground">Documento:</span>
                       <span className="font-medium">{settings.paymentCI}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Teléfono:</span>
+                      <span className="text-muted-foreground">Telefono:</span>
                       <span className="font-medium">{settings.paymentPhone}</span>
                     </div>
                     {settings.paymentInstructions && (
