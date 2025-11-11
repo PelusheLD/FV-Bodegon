@@ -6,6 +6,13 @@ import type { Product, SiteSettings } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +30,34 @@ import {
 interface CartItem extends Product {
   quantity: number;
 }
+
+const BANKS = [
+  { code: '0102', name: 'BANCO DE VENEZUELA' },
+  { code: '0104', name: 'BANCO VENEZOLANO DE CREDITO' },
+  { code: '0105', name: 'BANCO MERCANTIL' },
+  { code: '0108', name: 'BBVA PROVINCIAL' },
+  { code: '0114', name: 'BANCARIBE' },
+  { code: '0115', name: 'BANCO EXTERIOR' },
+  { code: '0128', name: 'BANCO CARONI' },
+  { code: '0134', name: 'BANESCO' },
+  { code: '0137', name: 'BANCO SOFITASA' },
+  { code: '0138', name: 'BANCO PLAZA' },
+  { code: '0146', name: 'BANGENTE' },
+  { code: '0151', name: 'BANCO FONDO COMUN' },
+  { code: '0156', name: '100% BANCO' },
+  { code: '0157', name: 'DELSUR BANCO UNIVERSAL' },
+  { code: '0163', name: 'BANCO DEL TESORO' },
+  { code: '0168', name: 'BANCRECER' },
+  { code: '0169', name: 'R4 BANCO MICROFINANCIERO C.A.' },
+  { code: '0171', name: 'BANCO ACTIVO' },
+  { code: '0172', name: 'BANCAMIGA BANCO UNIVERSAL, C.A.' },
+  { code: '0173', name: 'BANCO INTERNACIONAL DE DESARROLLO' },
+  { code: '0174', name: 'BANPLUS' },
+  { code: '0175', name: 'BANCO DIGITAL DE LOS TRABAJADORES, BANCO UNIVERSAL' },
+  { code: '0177', name: 'BANFANB' },
+  { code: '0178', name: 'N58 BANCO DIGITAL BANCO MICROFINANCIERO S A' },
+  { code: '0191', name: 'BANCO NACIONAL DE CREDITO' },
+];
 
 interface ShoppingCartProps {
   isOpen: boolean;
@@ -553,42 +588,6 @@ export default function ShoppingCart({
                     <span className="font-bold text-lg text-green-700 dark:text-green-300">
                       Bs. {formatCurrency(totalInBolivares, 'BS')}
                     </span>
-                  </div>
-                </div>
-
-                {/* Inputs de confirmación de pago */}
-                <div className="space-y-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                  <h4 className="font-semibold text-yellow-900 dark:text-yellow-100">Datos para Confirmación de Pago</h4>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentBank">Banco emisor *</Label>
-                    <Input
-                      id="paymentBank"
-                      name="paymentBank"
-                      required
-                      placeholder="Ej: Banco de Venezuela"
-                      data-testid="input-payment-bank"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentCI">Documento afiliado *</Label>
-                    <Input
-                      id="paymentCI"
-                      name="paymentCI"
-                      required
-                      placeholder="Ej: V-12345678"
-                      data-testid="input-payment-ci"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentPhone">Telefono afiliado *</Label>
-                    <Input
-                      id="paymentPhone"
-                      name="paymentPhone"
-                      type="tel"
-                      required
-                      placeholder="Ej: 04241234567"
-                      data-testid="input-payment-phone"
-                    />
                   </div>
                 </div>
               </div>
