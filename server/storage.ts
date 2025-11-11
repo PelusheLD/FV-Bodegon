@@ -296,6 +296,11 @@ export class MemStorage implements IStorage {
       customerAddress: order.customerAddress ?? null,
       notes: order.notes ?? null,
       total: order.total.toString(),
+      totalInBolivares: order.totalInBolivares ? order.totalInBolivares.toString() : null,
+      paymentBank: order.paymentBank ?? null,
+      paymentCI: order.paymentCI ?? null,
+      paymentPhone: order.paymentPhone ?? null,
+      paymentConfirmed: order.paymentConfirmed ?? false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
