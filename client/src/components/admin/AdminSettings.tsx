@@ -47,6 +47,10 @@ export default function AdminSettings() {
       taxPercentage: formData.get('taxPercentage') as string,
       latitude: formData.get('latitude') as string,
       longitude: formData.get('longitude') as string,
+      paymentBank: (formData.get('paymentBank') as string) || undefined,
+      paymentCI: (formData.get('paymentCI') as string) || undefined,
+      paymentPhone: (formData.get('paymentPhone') as string) || undefined,
+      paymentInstructions: (formData.get('paymentInstructions') as string) || undefined,
       enableCarousel1: formData.get('enableCarousel1') === 'on',
       enableCarousel2: formData.get('enableCarousel2') === 'on',
       enableCarousel3: formData.get('enableCarousel3') === 'on',
@@ -204,7 +208,72 @@ export default function AdminSettings() {
                 Porcentaje de IVA incluido en los precios de los productos (ej: 16.00 para 16%)
               </p>
             </div>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Datos Bancarios para Pagos</CardTitle>
+            <CardDescription>Información de cuenta para pagos móviles</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentBank">Banco</Label>
+              <Input
+                id="paymentBank"
+                name="paymentBank"
+                placeholder="Banplus"
+                defaultValue={settings?.paymentBank || ''}
+                data-testid="input-payment-bank"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentCI">Cédula del Titular</Label>
+              <Input
+                id="paymentCI"
+                name="paymentCI"
+                placeholder="J-503280280"
+                defaultValue={settings?.paymentCI || ''}
+                data-testid="input-payment-ci"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentPhone">Teléfono para Pago Móvil</Label>
+              <Input
+                id="paymentPhone"
+                name="paymentPhone"
+                type="tel"
+                placeholder="04245775917"
+                defaultValue={settings?.paymentPhone || ''}
+                data-testid="input-payment-phone"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentInstructions">Instrucciones de Pago</Label>
+              <Textarea
+                id="paymentInstructions"
+                name="paymentInstructions"
+                placeholder="IMPORTANTE: Indicar número de teléfono, banco, cédula titular del pago móvil para confirmar."
+                rows={3}
+                defaultValue={settings?.paymentInstructions || ''}
+                data-testid="input-payment-instructions"
+              />
+              <p className="text-xs text-muted-foreground">
+                Instrucciones que se mostrarán a los clientes al realizar el pago
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ubicación</CardTitle>
+            <CardDescription>Coordenadas para el mapa de contacto</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="latitude">Latitud</Label>

@@ -542,6 +542,39 @@ export default function ShoppingCart({
                   </div>
                 )}
               </div>
+
+              {/* Sección de Datos Bancarios */}
+              {settings?.paymentBank && settings?.paymentCI && settings?.paymentPhone && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100">Datos para Pago Móvil</h3>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Banco:</span>
+                      <span className="font-medium">{settings.paymentBank}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cédula:</span>
+                      <span className="font-medium">{settings.paymentCI}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Teléfono:</span>
+                      <span className="font-medium">{settings.paymentPhone}</span>
+                    </div>
+                    {settings.paymentInstructions && (
+                      <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
+                          {settings.paymentInstructions}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <DialogFooter>

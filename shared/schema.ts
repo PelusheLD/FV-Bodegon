@@ -109,6 +109,11 @@ export const siteSettings = pgTable("site_settings", {
   // Coordenadas para el mapa de contacto
   latitude: decimal("latitude", { precision: 18, scale: 15 }).notNull().default('9.552533674221890'),
   longitude: decimal("longitude", { precision: 19, scale: 15 }).notNull().default('-69.205197603437410'),
+  // Datos bancarios para pagos
+  paymentBank: text("payment_bank"),
+  paymentCI: text("payment_ci"),
+  paymentPhone: text("payment_phone"),
+  paymentInstructions: text("payment_instructions"),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
