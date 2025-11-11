@@ -21,23 +21,42 @@ async function seed() {
 
   const existingSettings = await db.select().from(siteSettings).limit(1);
   if (existingSettings.length === 0) {
-    // Solo insertar campos que existen en todas las versiones de la base de datos
-    await db.insert(siteSettings).values({
-      siteName: 'FV BODEGONES',
-      siteDescription: 'Tu bodega de confianza para productos de consumo diario',
-      contactPhone: '+1 (555) 123-4567',
-      contactEmail: 'contacto@fvbodegones.com',
-      contactAddress: 'Calle Principal #123, Ciudad',
-      facebookUrl: '#',
-      instagramUrl: '#',
-      twitterUrl: '#',
-      // Campos de pago (pueden no existir si la migración no se ha ejecutado)
-      paymentBank: 'Banplus',
-      paymentCI: 'J-503280280',
-      paymentPhone: '04245775917',
-      paymentInstructions: 'IMPORTANTE: Indicar número de teléfono, banco, cédula titular del pago móvil para confirmar.',
-    } as any); // Usar 'as any' para evitar errores de tipo si las columnas no existen aún
-    console.log('✓ Created default site settings');
+    try {
+      // Intentar insertar con todos los campos
+      await db.insert(siteSettings).values({
+        siteName: 'FV BODEGONES',
+        siteDescription: 'Tu bodega de confianza para productos de consumo diario',
+        contactPhone: '+1 (555) 123-4567',
+        contactEmail: 'contacto@fvbodegones.com',
+        contactAddress: 'Calle Principal #123, Ciudad',
+        facebookUrl: '#',
+        instagramUrl: '#',
+        twitterUrl: '#',
+        paymentBank: 'Banplus',
+        paymentCI: 'J-503280280',
+        paymentPhone: '04245775917',
+        paymentInstructions: 'IMPORTANTE: Indicar número de teléfono, banco, cédula titular del pago móvil para confirmar.',
+      });
+      console.log('✓ Created default site settings');
+    } catch (error: any) {
+      // Si falla por columnas faltantes, insertar solo campos básicos
+      if (error.message && error.message.includes('does not exist')) {
+        console.log('⚠ Columnas de pago no existen aún, insertando solo campos básicos...');
+        await db.insert(siteSettings).values({
+          siteName: 'FV BODEGONES',
+          siteDescription: 'Tu bodega de confianza para productos de consumo diario',
+          contactPhone: '+1 (555) 123-4567',
+          contactEmail: 'contacto@fvbodegones.com',
+          contactAddress: 'Calle Principal #123, Ciudad',
+          facebookUrl: '#',
+          instagramUrl: '#',
+          twitterUrl: '#',
+        } as any);
+        console.log('✓ Created default site settings (sin campos de pago)');
+      } else {
+        throw error;
+      }
+    }
   } else {
     console.log('✓ Site settings already exist');
   }
