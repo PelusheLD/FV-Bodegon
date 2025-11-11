@@ -132,8 +132,14 @@ export const orders = pgTable("orders", {
   customerEmail: text("customer_email"),
   customerAddress: text("customer_address"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  totalInBolivares: decimal("total_in_bolivares", { precision: 10, scale: 2 }),
   status: text("status").notNull().default('pending'),
   notes: text("notes"),
+  // Datos de confirmación de pago
+  paymentBank: text("payment_bank"),
+  paymentCI: text("payment_ci"),
+  paymentPhone: text("payment_phone"),
+  paymentConfirmed: boolean("payment_confirmed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -144,7 +150,9 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   updatedAt: true,
 }).extend({
   total: z.string().or(z.number()),
+  totalInBolivares: z.string().or(z.number()).optional(),
   status: z.enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']).default('pending'),
+  paymentConfirmed: z.boolean().optional(),
 });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

@@ -549,6 +549,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/orders/:id/payment", authMiddleware, async (req, res) => {
+    try {
+      const { paymentConfirmed } = req.body;
+      if (typeof paymentConfirmed !== 'boolean') {
+        return res.status(400).json({ error: "paymentConfirmed must be a boolean" });
+      }
+      
+      const order = await storage.updateOrderPaymentConfirmed(req.params.id, paymentConfirmed);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update payment confirmation" });
+    }
+  });
+
   app.get("/api/orders/:id/items", authMiddleware, async (req, res) => {
     try {
       const items = await storage.getOrderItems(req.params.id);

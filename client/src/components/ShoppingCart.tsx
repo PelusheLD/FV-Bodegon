@@ -124,6 +124,10 @@ export default function ShoppingCart({
       customerAddress: formData.get('customerAddress') as string || undefined,
       notes: formData.get('notes') as string || undefined,
       total: total,
+      totalInBolivares: totalInBolivares,
+      paymentBank: formData.get('paymentBank') as string || undefined,
+      paymentCI: formData.get('paymentCI') as string || undefined,
+      paymentPhone: formData.get('paymentPhone') as string || undefined,
       status: 'pending',
       items: orderItems,
     };
@@ -529,19 +533,63 @@ export default function ShoppingCart({
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-lg border-t pt-2">
-                    <span className="font-medium">Total a pagar:</span>
+                    <span className="font-medium">Total a pagar en $:</span>
                     <span className="font-bold text-lg text-primary">
-                      {currency === 'USD' 
-                        ? `$${formatCurrency(total)}`
-                        : `Bs. ${formatCurrency(totalInBolivares, 'BS')}`
-                      }
+                      ${formatCurrency(total)}
                     </span>
                   </div>
-                  {currency === 'BS' && (
-                    <div className="text-xs text-muted-foreground text-center">
-                      ≈ ${formatCurrency(total)}
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-lg">
+                    <span className="font-medium">Total a pagar en Bs.:</span>
+                    <span className="font-bold text-lg text-primary">
+                      Bs. {formatCurrency(totalInBolivares, 'BS')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Monto a pagar en BS debajo del teléfono */}
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-green-900 dark:text-green-100">Monto a pagar en Bs.:</span>
+                    <span className="font-bold text-lg text-green-700 dark:text-green-300">
+                      Bs. {formatCurrency(totalInBolivares, 'BS')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Inputs de confirmación de pago */}
+                <div className="space-y-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                  <h4 className="font-semibold text-yellow-900 dark:text-yellow-100">Datos para Confirmación de Pago</h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentBank">Banco emisor *</Label>
+                    <Input
+                      id="paymentBank"
+                      name="paymentBank"
+                      required
+                      placeholder="Ej: Banco de Venezuela"
+                      data-testid="input-payment-bank"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentCI">Documento afiliado *</Label>
+                    <Input
+                      id="paymentCI"
+                      name="paymentCI"
+                      required
+                      placeholder="Ej: V-12345678"
+                      data-testid="input-payment-ci"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentPhone">Telefono afiliado *</Label>
+                    <Input
+                      id="paymentPhone"
+                      name="paymentPhone"
+                      type="tel"
+                      required
+                      placeholder="Ej: 04241234567"
+                      data-testid="input-payment-phone"
+                    />
+                  </div>
                 </div>
               </div>
 

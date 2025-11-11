@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem } from "@shared/schema";
@@ -50,6 +52,19 @@ export default function AdminOrders() {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.refetchQueries({ queryKey: ['/api/orders'] });
       toast({ title: "Estado actualizado" });
+    },
+  });
+
+  const updatePaymentConfirmedMutation = useMutation({
+    mutationFn: async ({ id, paymentConfirmed }: { id: string; paymentConfirmed: boolean }) =>
+      apiRequest(`/api/orders/${id}/payment`, { method: 'PATCH', body: { paymentConfirmed } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.refetchQueries({ queryKey: ['/api/orders'] });
+      if (selectedOrder) {
+        setSelectedOrder({ ...selectedOrder, paymentConfirmed: !selectedOrder.paymentConfirmed });
+      }
+      toast({ title: "Confirmación de pago actualizada" });
     },
   });
 
@@ -187,6 +202,58 @@ export default function AdminOrders() {
                 <div>
                   <h4 className="font-semibold mb-1">Dirección de entrega</h4>
                   <p>{selectedOrder.customerAddress}</p>
+                </div>
+              )}
+
+              {/* Sección de Datos de Pago */}
+              {(selectedOrder.paymentBank || selectedOrder.paymentCI || selectedOrder.paymentPhone) && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">Datos de Confirmación de Pago</h4>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="paymentConfirmed"
+                        checked={selectedOrder.paymentConfirmed || false}
+                        onCheckedChange={(checked) => {
+                          updatePaymentConfirmedMutation.mutate({
+                            id: selectedOrder.id,
+                            paymentConfirmed: checked as boolean,
+                          });
+                        }}
+                      />
+                      <Label htmlFor="paymentConfirmed" className="text-sm font-medium cursor-pointer">
+                        Pago Confirmado
+                      </Label>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    {selectedOrder.paymentBank && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Banco emisor:</span>
+                        <span className="font-medium">{selectedOrder.paymentBank}</span>
+                      </div>
+                    )}
+                    {selectedOrder.paymentCI && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Documento afiliado:</span>
+                        <span className="font-medium">{selectedOrder.paymentCI}</span>
+                      </div>
+                    )}
+                    {selectedOrder.paymentPhone && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Telefono afiliado:</span>
+                        <span className="font-medium">{selectedOrder.paymentPhone}</span>
+                      </div>
+                    )}
+                    {selectedOrder.totalInBolivares && (
+                      <div className="flex justify-between pt-2 border-t border-blue-200 dark:border-blue-800">
+                        <span className="text-muted-foreground">Total en Bs.:</span>
+                        <span className="font-bold text-lg text-blue-700 dark:text-blue-300">
+                          Bs. {parseFloat(selectedOrder.totalInBolivares).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

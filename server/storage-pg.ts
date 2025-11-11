@@ -285,6 +285,7 @@ export class PostgresStorage implements IStorage {
     const orderData = {
       ...order,
       total: order.total.toString(),
+      totalInBolivares: order.totalInBolivares ? order.totalInBolivares.toString() : null,
     };
     const result = await db.insert(orders).values(orderData).returning();
     return result[0];
