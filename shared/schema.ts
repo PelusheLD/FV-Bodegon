@@ -139,7 +139,7 @@ export const orders = pgTable("orders", {
   paymentBank: text("payment_bank"),
   paymentCI: text("payment_ci"),
   paymentPhone: text("payment_phone"),
-  paymentConfirmed: boolean("payment_confirmed").notNull().default(false),
+  paymentStatus: text("payment_status").notNull().default('pending'), // 'pending', 'approved', 'rejected'
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -152,7 +152,7 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   total: z.string().or(z.number()),
   totalInBolivares: z.string().or(z.number()).optional(),
   status: z.enum(['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']).default('pending'),
-  paymentConfirmed: z.boolean().optional(),
+  paymentStatus: z.enum(['pending', 'approved', 'rejected']).default('pending').optional(),
 });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

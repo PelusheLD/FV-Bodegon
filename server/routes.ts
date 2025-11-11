@@ -551,19 +551,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/orders/:id/payment", authMiddleware, async (req, res) => {
     try {
-      const { paymentConfirmed } = req.body;
-      if (typeof paymentConfirmed !== 'boolean') {
-        return res.status(400).json({ error: "paymentConfirmed must be a boolean" });
+      const { paymentStatus } = req.body;
+      if (!paymentStatus || !['pending', 'approved', 'rejected'].includes(paymentStatus)) {
+        return res.status(400).json({ error: "paymentStatus must be 'pending', 'approved', or 'rejected'" });
       }
       
-      const order = await storage.updateOrderPaymentConfirmed(req.params.id, paymentConfirmed);
+      const order = await storage.updateOrderPaymentStatus(req.params.id, paymentStatus);
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
       
       res.json(order);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update payment confirmation" });
+      res.status(500).json({ error: "Failed to update payment status" });
     }
   });
 

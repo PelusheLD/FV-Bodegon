@@ -581,22 +581,14 @@ export default function ShoppingCart({
                   </div>
                 </div>
 
-                {/* Monto a pagar en BS debajo del teléfono */}
-                <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-green-900 dark:text-green-100">Monto a pagar en Bs.:</span>
-                    <span className="font-bold text-lg text-green-700 dark:text-green-300">
-                      Bs. {formatCurrency(totalInBolivares, 'BS')}
-                    </span>
-                  </div>
-                </div>
+                
               </div>
 
               {/* Columna Derecha: Datos Bancarios */}
               <div className="space-y-4">
                 {settings?.paymentBank && settings?.paymentCI && settings?.paymentPhone ? (
                   <>
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3 sticky top-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3 top-4">
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -625,6 +617,15 @@ export default function ShoppingCart({
                         )}
                       </div>
                     </div>
+                    {/* Monto a pagar en BS debajo del teléfono */}
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-green-900 dark:text-green-100">Monto a pagar en Bs.:</span>
+                    <span className="font-bold text-lg text-green-700 dark:text-green-300">
+                      Bs. {formatCurrency(totalInBolivares, 'BS')}
+                    </span>
+                  </div>
+                </div>
 
                     {/* Inputs de confirmación de pago */}
                     <div className="space-y-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md">

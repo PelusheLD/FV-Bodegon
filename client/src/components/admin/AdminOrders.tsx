@@ -17,8 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem } from "@shared/schema";
@@ -55,16 +53,13 @@ export default function AdminOrders() {
     },
   });
 
-  const updatePaymentConfirmedMutation = useMutation({
-    mutationFn: async ({ id, paymentConfirmed }: { id: string; paymentConfirmed: boolean }) =>
-      apiRequest(`/api/orders/${id}/payment`, { method: 'PATCH', body: { paymentConfirmed } }),
+  const updatePaymentStatusMutation = useMutation({
+    mutationFn: async ({ id, paymentStatus }: { id: string; paymentStatus: string }) =>
+      apiRequest(`/api/orders/${id}/payment`, { method: 'PATCH', body: { paymentStatus } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.refetchQueries({ queryKey: ['/api/orders'] });
-      if (selectedOrder) {
-        setSelectedOrder({ ...selectedOrder, paymentConfirmed: !selectedOrder.paymentConfirmed });
-      }
-      toast({ title: "Confirmación de pago actualizada" });
+      toast({ title: "Estado de pago actualizado" });
     },
   });
 
@@ -169,6 +164,87 @@ export default function AdminOrders() {
                       <p className="text-sm"><strong>Notas:</strong> {order.notes}</p>
                     </div>
                   )}
+
+                  {/* Sección de Confirmación de Pago */}
+                  {(order.paymentBank || order.paymentCI || order.paymentPhone) && (
+                    <div className={`mt-4 p-4 rounded-md space-y-3 border ${
+                      order.paymentStatus === 'approved' 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
+                        : order.paymentStatus === 'rejected'
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
+                        : 'bg-muted border-border'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <h4 className={`font-semibold ${
+                          order.paymentStatus === 'approved'
+                            ? 'text-green-900 dark:text-green-100'
+                            : order.paymentStatus === 'rejected'
+                            ? 'text-red-900 dark:text-red-100'
+                            : 'text-foreground'
+                        }`}>
+                          Datos de Confirmación de Pago
+                        </h4>
+                        <Select
+                          value={order.paymentStatus || 'pending'}
+                          onValueChange={(value) => {
+                            updatePaymentStatusMutation.mutate({
+                              id: order.id,
+                              paymentStatus: value,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">No confirmado</SelectItem>
+                            <SelectItem value="approved">Aprobado</SelectItem>
+                            <SelectItem value="rejected">Rechazado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        {order.paymentBank && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Banco emisor:</span>
+                            <span className="font-medium">{order.paymentBank}</span>
+                          </div>
+                        )}
+                        {order.paymentCI && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Documento afiliado:</span>
+                            <span className="font-medium">{order.paymentCI}</span>
+                          </div>
+                        )}
+                        {order.paymentPhone && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Telefono afiliado:</span>
+                            <span className="font-medium">{order.paymentPhone}</span>
+                          </div>
+                        )}
+                        {order.totalInBolivares && (
+                          <div className={`flex justify-between pt-2 border-t ${
+                            order.paymentStatus === 'approved'
+                              ? 'border-green-200 dark:border-green-800'
+                              : order.paymentStatus === 'rejected'
+                              ? 'border-red-200 dark:border-red-800'
+                              : 'border-border'
+                          }`}>
+                            <span className="text-muted-foreground">Total en Bs.:</span>
+                            <span className={`font-bold text-lg ${
+                              order.paymentStatus === 'approved'
+                                ? 'text-green-700 dark:text-green-300'
+                                : order.paymentStatus === 'rejected'
+                                ? 'text-red-700 dark:text-red-300'
+                                : 'text-foreground'
+                            }`}>
+                              Bs. {parseFloat(order.totalInBolivares).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -202,58 +278,6 @@ export default function AdminOrders() {
                 <div>
                   <h4 className="font-semibold mb-1">Dirección de entrega</h4>
                   <p>{selectedOrder.customerAddress}</p>
-                </div>
-              )}
-
-              {/* Sección de Datos de Pago */}
-              {(selectedOrder.paymentBank || selectedOrder.paymentCI || selectedOrder.paymentPhone) && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">Datos de Confirmación de Pago</h4>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="paymentConfirmed"
-                        checked={selectedOrder.paymentConfirmed || false}
-                        onCheckedChange={(checked) => {
-                          updatePaymentConfirmedMutation.mutate({
-                            id: selectedOrder.id,
-                            paymentConfirmed: checked as boolean,
-                          });
-                        }}
-                      />
-                      <Label htmlFor="paymentConfirmed" className="text-sm font-medium cursor-pointer">
-                        Pago Confirmado
-                      </Label>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    {selectedOrder.paymentBank && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Banco emisor:</span>
-                        <span className="font-medium">{selectedOrder.paymentBank}</span>
-                      </div>
-                    )}
-                    {selectedOrder.paymentCI && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Documento afiliado:</span>
-                        <span className="font-medium">{selectedOrder.paymentCI}</span>
-                      </div>
-                    )}
-                    {selectedOrder.paymentPhone && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Telefono afiliado:</span>
-                        <span className="font-medium">{selectedOrder.paymentPhone}</span>
-                      </div>
-                    )}
-                    {selectedOrder.totalInBolivares && (
-                      <div className="flex justify-between pt-2 border-t border-blue-200 dark:border-blue-800">
-                        <span className="text-muted-foreground">Total en Bs.:</span>
-                        <span className="font-bold text-lg text-blue-700 dark:text-blue-300">
-                          Bs. {parseFloat(selectedOrder.totalInBolivares).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
 
