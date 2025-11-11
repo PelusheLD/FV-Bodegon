@@ -453,7 +453,7 @@ export default function ShoppingCart({
       </Dialog>
 
       <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Finalizar Compra</DialogTitle>
             <DialogDescription>
@@ -461,120 +461,128 @@ export default function ShoppingCart({
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitCheckout}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Nombre completo *</Label>
-                <Input
-                  id="customerName"
-                  name="customerName"
-                  required
-                  placeholder="Juan Pérez"
-                  data-testid="input-customer-name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customerPhone">Teléfono *</Label>
-                <Input
-                  id="customerPhone"
-                  name="customerPhone"
-                  type="tel"
-                  required
-                  placeholder="+58 424-5551570"
-                  data-testid="input-customer-phone"
-                />
-              </div>
-
-
-              <div className="space-y-2">
-                <Label htmlFor="customerAddress">Dirección de entrega</Label>
-                <Textarea
-                  id="customerAddress"
-                  name="customerAddress"
-                  placeholder="Calle 31 entre avenida 37 y 38 Sector El Palito, Acarigua 3301"
-                  rows={2}
-                  data-testid="input-customer-address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notas adicionales</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  placeholder="Instrucciones especiales para tu pedido"
-                  rows={2}
-                  data-testid="input-order-notes"
-                />
-              </div>
-
-              <div className="p-3 bg-muted rounded-md space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Subtotal (sin IVA):</span>
-                  <span>
-                    {currency === 'USD' 
-                      ? `$${formatCurrency(subtotal)}`
-                      : `Bs. ${formatCurrency(subtotalInBolivares, 'BS')}`
-                    }
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              {/* Columna Izquierda: Formulario y Resumen */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerName">Nombre completo *</Label>
+                  <Input
+                    id="customerName"
+                    name="customerName"
+                    required
+                    placeholder="Juan Pérez"
+                    data-testid="input-customer-name"
+                  />
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>IVA incluido ({taxPercentage}%):</span>
-                  <span>
-                    {currency === 'USD' 
-                      ? `$${formatCurrency(taxAmount)}`
-                      : `Bs. ${formatCurrency(taxAmountInBolivares, 'BS')}`
-                    }
-                  </span>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerPhone">Teléfono *</Label>
+                  <Input
+                    id="customerPhone"
+                    name="customerPhone"
+                    type="tel"
+                    required
+                    placeholder="+58 424-5551570"
+                    data-testid="input-customer-phone"
+                  />
                 </div>
-                <div className="flex items-center justify-between text-lg border-t pt-2">
-                  <span className="font-medium">Total a pagar:</span>
-                  <span className="font-bold text-lg text-primary">
-                    {currency === 'USD' 
-                      ? `$${formatCurrency(total)}`
-                      : `Bs. ${formatCurrency(totalInBolivares, 'BS')}`
-                    }
-                  </span>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerAddress">Dirección de entrega</Label>
+                  <Textarea
+                    id="customerAddress"
+                    name="customerAddress"
+                    placeholder="Calle 31 entre avenida 37 y 38 Sector El Palito, Acarigua 3301"
+                    rows={2}
+                    data-testid="input-customer-address"
+                  />
                 </div>
-                {currency === 'BS' && (
-                  <div className="text-xs text-muted-foreground text-center">
-                    ≈ ${formatCurrency(total)}
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notas adicionales</Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    placeholder="Instrucciones especiales para tu pedido"
+                    rows={2}
+                    data-testid="input-order-notes"
+                  />
+                </div>
+
+                <div className="p-3 bg-muted rounded-md space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Subtotal (sin IVA):</span>
+                    <span>
+                      {currency === 'USD' 
+                        ? `$${formatCurrency(subtotal)}`
+                        : `Bs. ${formatCurrency(subtotalInBolivares, 'BS')}`
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>IVA incluido ({taxPercentage}%):</span>
+                    <span>
+                      {currency === 'USD' 
+                        ? `$${formatCurrency(taxAmount)}`
+                        : `Bs. ${formatCurrency(taxAmountInBolivares, 'BS')}`
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-lg border-t pt-2">
+                    <span className="font-medium">Total a pagar:</span>
+                    <span className="font-bold text-lg text-primary">
+                      {currency === 'USD' 
+                        ? `$${formatCurrency(total)}`
+                        : `Bs. ${formatCurrency(totalInBolivares, 'BS')}`
+                      }
+                    </span>
+                  </div>
+                  {currency === 'BS' && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      ≈ ${formatCurrency(total)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Columna Derecha: Datos Bancarios */}
+              <div className="space-y-4">
+                {settings?.paymentBank && settings?.paymentCI && settings?.paymentPhone ? (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3 sticky top-4">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">Datos para Pago Móvil</h3>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Banco:</span>
+                        <span className="font-medium">{settings.paymentBank}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Documento:</span>
+                        <span className="font-medium">{settings.paymentCI}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Telefono:</span>
+                        <span className="font-medium">{settings.paymentPhone}</span>
+                      </div>
+                      {settings.paymentInstructions && (
+                        <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
+                            {settings.paymentInstructions}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground text-center">
+                    Los datos bancarios no están configurados
                   </div>
                 )}
               </div>
-
-              {/* Sección de Datos Bancarios */}
-              {settings?.paymentBank && settings?.paymentCI && settings?.paymentPhone && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md space-y-3">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100">Datos para Pago Móvil</h3>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Banco:</span>
-                      <span className="font-medium">{settings.paymentBank}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Documento:</span>
-                      <span className="font-medium">{settings.paymentCI}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Telefono:</span>
-                      <span className="font-medium">{settings.paymentPhone}</span>
-                    </div>
-                    {settings.paymentInstructions && (
-                      <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
-                        <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                          {settings.paymentInstructions}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             <DialogFooter>
