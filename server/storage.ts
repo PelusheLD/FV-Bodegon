@@ -300,7 +300,7 @@ export class MemStorage implements IStorage {
       paymentBank: order.paymentBank ?? null,
       paymentCI: order.paymentCI ?? null,
       paymentPhone: order.paymentPhone ?? null,
-      paymentConfirmed: order.paymentConfirmed ?? false,
+      paymentStatus: order.paymentStatus ?? 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
