@@ -624,6 +624,47 @@ export default function ShoppingCart({
                       )}
                     </div>
                   </div>
+
+                  {/* Inputs de confirmación de pago */}
+                  <div className="space-y-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-100">Datos para Confirmación de Pago</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentBank">Banco emisor *</Label>
+                      <Select name="paymentBank" required>
+                        <SelectTrigger id="paymentBank" data-testid="input-payment-bank">
+                          <SelectValue placeholder="Seleccione un banco" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BANKS.map((bank) => (
+                            <SelectItem key={bank.code} value={bank.code}>
+                              {bank.code} - {bank.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentCI">Documento afiliado *</Label>
+                      <Input
+                        id="paymentCI"
+                        name="paymentCI"
+                        required
+                        placeholder="Ej: V-12345678"
+                        data-testid="input-payment-ci"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentPhone">Telefono afiliado *</Label>
+                      <Input
+                        id="paymentPhone"
+                        name="paymentPhone"
+                        type="tel"
+                        required
+                        placeholder="Ej: 04241234567"
+                        data-testid="input-payment-phone"
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <div className="p-4 bg-muted rounded-md text-sm text-muted-foreground text-center">
                     Los datos bancarios no están configurados
