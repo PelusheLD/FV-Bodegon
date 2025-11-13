@@ -191,22 +191,34 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    - **Platform version**: Latest
 
 4. **Código de la aplicación**:
-   - Selecciona **"Upload your code"**
-   - Crea un archivo ZIP con:
-     - `package.json`
-     - `package-lock.json`
-     - Carpeta `server/`
-     - Carpeta `shared/`
-     - Carpeta `migrations/`
-     - Carpeta `public/` (si existe)
-     - Archivo `tsconfig.json`
-     - Archivo `.npmrc` (si existe)
+   - Selecciona **"Upload your code"** ✅ (ya está seleccionado)
+   - **Version label**: 
+     - ⚠️ **Este campo es obligatorio** (está marcado en rojo)
+     - Ejemplos: `v1.0.0`, `backend-2024-01-15`, `fv-bodegon-v1`
+     - Debe ser único para cada versión que subas
+   - **Source code origin**: 
+     - Selecciona **"Local file"** ✅ (ya está seleccionado)
+   - **Crear archivo ZIP**:
+     - ⚠️ **El archivo debe ser menor a 500 MB**
+     - Incluye estos archivos y carpetas:
+       - `package.json`
+       - `package-lock.json`
+       - Carpeta `server/` (completa)
+       - Carpeta `shared/` (completa)
+       - Carpeta `migrations/` (completa)
+       - Carpeta `public/` (si existe y tiene archivos)
+       - Archivo `tsconfig.json`
+       - Archivo `Procfile` (ya creado)
+       - Archivo `.npmrc` (si existe)
    
-   ⚠️ **No incluyas**:
-   - `node_modules/`
-   - `client/`
-   - `dist/`
-   - `.git/`
+   ⚠️ **NO incluyas**:
+   - `node_modules/` (se instalarán en el servidor)
+   - `client/` (no se necesita en el backend)
+   - `dist/` (se generará durante el build)
+   - `.git/` (no es necesario)
+   - Archivos de documentación (`.md`)
+   
+   **Click en "Choose file"** y selecciona tu archivo ZIP
 
 5. **Configurar variables de entorno**:
    ```
