@@ -70,20 +70,26 @@ https://main.xxxxxxxxxxxxx.amplifyapp.com
 
 2. **Crear base de datos**:
    - Click en **"Create database"**
-   - Selecciona **"Standard create"**
-   - **Engine type**: PostgreSQL
+   - Selecciona **"Standard create"** ⚠️ **NO uses "Easy create"** (te llevará a Aurora)
+   - **Engine type**: PostgreSQL ⚠️ **NO selecciones Aurora PostgreSQL** (es mucho más caro)
    - **Version**: 15.x o 14.x (recomendado)
-   - **Template**: Free tier (si es tu primera vez) o **Production** si necesitas más recursos
+   - **Template**: **Free tier** (si es tu primera vez) ⚠️ **Esta es la opción más económica**
 
 3. **Configuración básica**:
    - **DB instance identifier**: `fv-bodegon-db`
    - **Master username**: `postgres` (o el que prefieras)
    - **Master password**: ⚠️ **Genera una contraseña segura y guárdala**
 
-4. **Configuración de instancia**:
-   - **DB instance class**: `db.t3.micro` (free tier) o `db.t3.small` (producción)
-   - **Storage**: 20 GB (free tier) o más según necesites
-   - **Storage autoscaling**: Opcional, pero recomendado
+4. **Configuración de instancia** ⚠️ **IMPORTANTE - Aquí es donde ahorras dinero**:
+   - **DB instance class**: 
+     - **Free tier**: `db.t3.micro` o `db.t4g.micro` (Gratis por 12 meses)
+     - **Producción pequeña**: `db.t3.small` (~$15/mes)
+     - **NO selecciones**: `db.r6g`, `db.r5`, o cualquier instancia con "r" (son caras)
+   - **Storage**: 
+     - **Free tier**: 20 GB incluidos gratis
+     - **Producción**: 20-50 GB según necesites (~$0.10/GB/mes)
+   - **Storage type**: `gp3` (General Purpose SSD) - más económico
+   - **Storage autoscaling**: Opcional, solo si realmente lo necesitas
 
 5. **Conectividad**:
    - **VPC**: Selecciona una VPC existente o crea una nueva
@@ -377,20 +383,71 @@ Configura alarmas para:
 
 ## 💰 Estimación de Costos
 
+### ⚠️ IMPORTANTE: Evita Aurora PostgreSQL
+
+**NO uses Amazon Aurora** - Es mucho más caro (~$550/mes para instancias pequeñas).  
+**USA RDS PostgreSQL estándar** - Mucho más económico.
+
 ### Free Tier (Primeros 12 meses):
 
 - **AWS Amplify**: 1000 minutos de build/mes gratis
-- **RDS**: 750 horas/mes de db.t3.micro gratis
-- **Elastic Beanstalk**: Gratis (solo pagas por EC2)
+- **RDS PostgreSQL db.t3.micro**: **GRATIS** (750 horas/mes, 20 GB storage)
+- **RDS PostgreSQL db.t4g.micro**: **GRATIS** (750 horas/mes, 20 GB storage) - ARM, más eficiente
+- **Elastic Beanstalk**: Gratis (solo pagas por EC2 que también puede estar en free tier)
+- **EC2 t2.micro o t3.micro**: **GRATIS** (750 horas/mes)
 
-### Después del Free Tier:
+**Total en Free Tier**: **$0/mes** (si solo usas servicios del free tier)
 
-- **Amplify**: ~$0.01 por build minute
-- **RDS db.t3.micro**: ~$15/mes
-- **EC2 t3.small**: ~$15/mes
-- **Data transfer**: Variable según uso
+### Después del Free Tier (configuración económica):
 
-**Total estimado**: ~$30-50/mes para un sitio pequeño-mediano
+- **AWS Amplify**: 
+  - Builds: 1000 minutos gratis, luego ~$0.01/minuto
+  - Hosting: Gratis para sitios estáticos
+- **RDS PostgreSQL db.t3.micro**: ~$15/mes
+  - O **db.t4g.micro** (ARM): ~$12/mes (más eficiente y barato)
+- **Storage RDS**: ~$0.10/GB/mes (20 GB = $2/mes)
+- **EC2 t3.small**: ~$15/mes (para backend)
+- **Data transfer**: Primeros 100 GB gratis, luego ~$0.09/GB
+
+**Total estimado**: **~$32-44/mes** para un sitio pequeño-mediano
+
+### Comparación de Costos:
+
+| Servicio | Opción Cara (Aurora) | Opción Económica (RDS estándar) |
+|----------|---------------------|--------------------------------|
+| Base de datos | ~$550/mes (Aurora) | ~$15-17/mes (db.t3.micro + storage) |
+| Instancia | db.r6g.large | db.t3.micro o db.t4g.micro |
+| **Ahorro** | - | **~$530/mes** |
+
+### 💡 Recomendaciones para Ahorrar:
+
+1. **Usa el Free Tier** durante los primeros 12 meses ($0/mes)
+2. **db.t4g.micro** en lugar de db.t3.micro (más eficiente y barato)
+3. **No habilites** características premium innecesarias:
+   - Multi-AZ deployment (solo si necesitas alta disponibilidad)
+   - Automated backups (usa solo si lo necesitas, incrementa costo)
+   - Performance Insights (opcional, tiene costo adicional)
+4. **Storage**: Empieza con 20 GB, aumenta solo si es necesario
+5. **Considera servicios alternativos** para desarrollo/pruebas:
+   - **Neon** (PostgreSQL serverless): Free tier generoso
+   - **Supabase**: Free tier disponible
+   - **Railway**: ~$5/mes incluye base de datos
+
+### 📊 Costos Reales para Pequeño/Mediano Sitio:
+
+**Configuración mínima** (producción pequeña):
+- RDS db.t4g.micro: $12/mes
+- Storage 20 GB: $2/mes
+- EC2 t3.small: $15/mes
+- Amplify: $0 (hosting estático gratis)
+- **Total: ~$29/mes**
+
+**Configuración de crecimiento** (si necesitas más recursos):
+- RDS db.t3.small: $30/mes
+- Storage 50 GB: $5/mes
+- EC2 t3.medium: $30/mes
+- Amplify: $0-10/mes (depende de builds)
+- **Total: ~$65-75/mes**
 
 ---
 
