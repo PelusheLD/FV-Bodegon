@@ -116,10 +116,21 @@ https://main.xxxxxxxxxxxxx.amplifyapp.com
 1. **Ve a EC2 → Security Groups**
 2. **Selecciona el security group** `fv-bodegon-db-sg`
 3. **Edit inbound rules**:
-   - **Type**: PostgreSQL
-   - **Port**: 5432
-   - **Source**: Selecciona el security group del backend (o `0.0.0.0/0` temporalmente para pruebas)
-   - ⚠️ **Para producción**: Solo permite acceso desde el security group del backend
+   - **Type**: PostgreSQL (selecciona de la lista)
+   - **Protocol**: TCP (automático)
+   - **Port range**: 5432 (automático)
+   - **Source**: 
+     - ✅ **Para desarrollo/pruebas iniciales**: `0.0.0.0/0` (Anywhere - IPv4)
+       - ⚠️ **Advertencia**: Esto permite acceso desde cualquier IP. Es inseguro para producción pero útil para pruebas.
+     - 🔒 **Para producción**: Selecciona el security group del backend de Elastic Beanstalk
+       - Esto es más seguro porque solo permite acceso desde tu backend
+   - **Description** (opcional): "Allow PostgreSQL from backend" o "Temporary - allow from anywhere"
+   - Click en **"Save rules"**
+
+⚠️ **Nota sobre seguridad**: 
+- La advertencia amarilla que verás es normal con `0.0.0.0/0`
+- Para pruebas iniciales, está bien dejarlo así para verificar que todo funciona
+- **Una vez que tengas el backend desplegado**, actualiza esto para usar solo el security group del backend (más seguro)
 
 ### 2.3 Obtener la URL de conexión
 
