@@ -1,0 +1,29 @@
+# Elastic Beanstalk ignore file
+node_modules/
+.git/
+.gitignore
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Frontend (no necesario para backend)
+client/
+dist/public/
+attached_assets/
+
+# Documentación
+*.md
+docs/
+DEPLOY_INSTRUCTIONS.md
+AWS_AMPLIFY_DEPLOY.md
+INSTAGRAM_SETUP.md
+
+# Configuración de otros servicios
+render.yaml
+vercel.json
+amplify.yml
+
