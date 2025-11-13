@@ -73,7 +73,10 @@ https://main.xxxxxxxxxxxxx.amplifyapp.com
    - Selecciona **"Standard create"** ⚠️ **NO uses "Easy create"** (te llevará a Aurora)
    - **Engine type**: PostgreSQL ⚠️ **NO selecciones Aurora PostgreSQL** (es mucho más caro)
    - **Version**: 15.x o 14.x (recomendado)
-   - **Template**: **Free tier** (si es tu primera vez) ⚠️ **Esta es la opción más económica**
+   - **Template**: 
+     - ✅ **"Test environment"** (recomendado para empezar) - Usa free tier, más económico
+     - ⚠️ "Development and testing" - También económico, pero puede no usar free tier
+     - ❌ "Production" - Más caro, tiene alta disponibilidad y características premium
 
 3. **Configuración básica**:
    - **DB instance identifier**: `fv-bodegon-db`
