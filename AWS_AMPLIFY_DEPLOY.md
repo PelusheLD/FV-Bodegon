@@ -174,6 +174,9 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    - **Description**: `FV Bodegon Backend`
 
 3. **Crear entorno**:
+   - **Environment tier**: 
+     - ✅ **"Web server environment"** (seleccionado por defecto) - ✅ **Esta es la correcta**
+     - ❌ **"Worker environment"** - NO uses esta (es para tareas en segundo plano)
    - **Environment name**: `fv-bodegon-backend-prod`
    - **Platform**: Node.js
    - **Platform branch**: Node.js 20 running on 64bit Amazon Linux 2
