@@ -177,7 +177,15 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    - **Environment tier**: 
      - ✅ **"Web server environment"** (seleccionado por defecto) - ✅ **Esta es la correcta**
      - ❌ **"Worker environment"** - NO uses esta (es para tareas en segundo plano)
-   - **Environment name**: `fv-bodegon-backend-prod`
+   - **Environment name**: `fv-bodegon-backend-prod` 
+     - ✅ Ya está prellenado correctamente
+     - Debe tener entre 4-40 caracteres, solo letras, números y guiones
+   - **Domain**:
+     - ✅ **Déjalo en blanco** (dejará autogenerar el valor)
+     - El dominio completo será: `fv-bodegon-backend-prod.us-east-2.elasticbeanstalk.com`
+     - O puedes personalizarlo si lo deseas (debe ser único)
+   - **Environment description** (opcional):
+     - Puedes agregar una descripción como "Backend para FV Bodegon" o dejarlo vacío
    - **Platform**: Node.js
    - **Platform branch**: Node.js 20 running on 64bit Amazon Linux 2
    - **Platform version**: Latest
