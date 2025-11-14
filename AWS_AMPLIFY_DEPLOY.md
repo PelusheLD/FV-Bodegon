@@ -298,12 +298,16 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    SESSION_SECRET=genera-un-secreto-seguro-aqui
    PORT=8080
    ```
+   
+   ⚠️ **Nota**: Si no ves este paso ahora, podrás configurarlo después en la configuración del entorno.
 
-6. **Revisar y crear**:
+7. **Revisar y crear**:
+   - Click en **"Next"** hasta llegar al paso de **"Review"**
+   - Revisa toda la configuración
    - Click en **"Create environment"**
-   - Espera 5-10 minutos
+   - Espera 5-10 minutos mientras se despliega
 
-7. **Obtener la URL del backend**:
+8. **Obtener la URL del backend**:
    - Una vez desplegado, obtendrás una URL como:
      ```
      http://fv-bodegon-backend-prod.xxxxxxxxxxxxx.us-east-1.elasticbeanstalk.com
