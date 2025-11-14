@@ -291,7 +291,53 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    **Una vez configurados ambos roles, haz click en "Next"** para continuar.
 
-6. **Configurar variables de entorno**:
+6. **Configurar networking (Opcional pero recomendado)**:
+   
+   Este paso es **opcional**, pero es **recomendado** si tu base de datos RDS está en una VPC específica.
+   
+   #### 6.1 VPC (Virtual Private Cloud)
+   
+   **Opción A: Usar VPC por defecto (Más simple - Recomendado para empezar)**:
+   - Deja el dropdown de "VPC" en **"-"** (por defecto)
+   - Elastic Beanstalk usará la VPC por defecto de tu cuenta
+   - ✅ **Esta es la opción más simple** si tu RDS también está en la VPC por defecto
+   
+   **Opción B: Usar VPC personalizada**:
+   - Si tu RDS está en una VPC específica, selecciona esa VPC del dropdown
+   - O haz click en **"Create VPC"** si necesitas crear una nueva
+   - ⚠️ **Importante**: El backend y la base de datos deben estar en la misma VPC (o VPCs conectadas) para que puedan comunicarse
+   
+   #### 6.2 Public IP address
+   
+   **Recomendación**: ✅ **Marca la casilla "Enable"**
+   
+   - Esto asigna una IP pública a las instancias EC2
+   - Necesario para que el backend pueda:
+     - Conectarse a APIs externas (como la API de tasa de cambio)
+     - Descargar paquetes de npm
+     - Acceder a internet en general
+   - ⚠️ **Sin esto**, tu backend puede tener problemas para conectarse a servicios externos
+   
+   #### 6.3 Instance subnets
+   
+   **Si usas VPC por defecto**:
+   - Puedes dejar esto vacío (Elastic Beanstalk seleccionará subnets automáticamente)
+   - O selecciona subnets específicas si lo prefieres
+   
+   **Si usas VPC personalizada**:
+   - Selecciona las subnets donde quieres que se ejecuten las instancias
+   - Asegúrate de seleccionar subnets en diferentes zonas de disponibilidad para alta disponibilidad
+   
+   ⚠️ **Nota importante sobre RDS**:
+   - Si tu RDS tiene **"Public access: Yes"** (como configuramos antes), el backend podrá conectarse desde cualquier VPC
+   - Si tu RDS tiene **"Public access: No"**, el backend y RDS deben estar en la misma VPC
+   - Para mayor seguridad, es mejor tener ambos en la misma VPC y restringir el Security Group de RDS
+   
+   **Una vez configurado (o si quieres usar valores por defecto), haz click en "Next"** para continuar.
+   
+   💡 **Tip**: Si no estás seguro, puedes dejar todo en valores por defecto y hacer click en "Next". Siempre puedes ajustar esto después en la configuración del entorno.
+
+7. **Configurar variables de entorno**:
    ```
    NODE_ENV=production
    DATABASE_URL=postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
@@ -301,13 +347,13 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    ⚠️ **Nota**: Si no ves este paso ahora, podrás configurarlo después en la configuración del entorno.
 
-7. **Revisar y crear**:
+8. **Revisar y crear**:
    - Click en **"Next"** hasta llegar al paso de **"Review"**
    - Revisa toda la configuración
    - Click en **"Create environment"**
    - Espera 5-10 minutos mientras se despliega
 
-8. **Obtener la URL del backend**:
+9. **Obtener la URL del backend**:
    - Una vez desplegado, obtendrás una URL como:
      ```
      http://fv-bodegon-backend-prod.xxxxxxxxxxxxx.us-east-1.elasticbeanstalk.com
