@@ -220,7 +220,78 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    **Click en "Choose file"** y selecciona tu archivo ZIP
 
-5. **Configurar variables de entorno**:
+5. **Configurar acceso del servicio (Service access)** ⚠️ **OBLIGATORIO**:
+   
+   En este paso necesitas configurar **2 roles IAM** (ambos son obligatorios):
+   
+   #### 5.1 Service role (Rol de servicio)
+   
+   Este rol permite que Elastic Beanstalk gestione recursos en tu nombre.
+   
+   **Opción A: Crear automáticamente (Recomendado)**:
+   1. Click en el botón **"Create role [🔗]"** junto al dropdown de "Service role"
+   2. Se abrirá una nueva pestaña en IAM
+   3. **Role name**: `aws-elasticbeanstalk-service-role` (o déjalo por defecto)
+   4. **Trusted entity type**: AWS service
+   5. **Use case**: Elastic Beanstalk
+   6. Click en **"Next"**
+   7. **Permissions**: 
+      - ✅ AWS ya seleccionará automáticamente las políticas necesarias:
+        - `AWSElasticBeanstalkEnhancedHealth`
+        - `AWSElasticBeanstalkService`
+      - No necesitas agregar más políticas
+   8. Click en **"Next"**
+   9. **Review and create**: Click en **"Create role"**
+   10. **Vuelve a la pestaña de Elastic Beanstalk**
+   11. Click en el ícono de **refresh (🔄)** junto al dropdown
+   12. Selecciona el rol que acabas de crear: `aws-elasticbeanstalk-service-role`
+   
+   **Opción B: Si ya tienes un rol**:
+   - Click en el ícono de **refresh (🔄)** para actualizar la lista
+   - Selecciona un rol existente que tenga las políticas necesarias
+   
+   #### 5.2 EC2 instance profile (Perfil de instancia EC2)
+   
+   Este perfil permite que las instancias EC2 ejecuten tu aplicación.
+   
+   **Opción A: Crear automáticamente (Recomendado)**:
+   1. Click en el botón **"Create role [🔗]"** junto al dropdown de "EC2 instance profile"
+   2. Se abrirá una nueva pestaña en IAM
+   3. **Role name**: `aws-elasticbeanstalk-ec2-role` (o déjalo por defecto)
+   4. **Trusted entity type**: AWS service
+   5. **Use case**: EC2
+   6. Click en **"Next"**
+   7. **Permissions**:
+      - ✅ AWS ya seleccionará automáticamente las políticas necesarias:
+        - `AWSElasticBeanstalkWebTier`
+        - `AWSElasticBeanstalkWorkerTier`
+        - `AWSElasticBeanstalkMulticontainerDocker`
+      - O puedes buscar y agregar manualmente: `AWSElasticBeanstalkWebTier`
+   8. Click en **"Next"**
+   9. **Review and create**: Click en **"Create role"**
+   10. **Vuelve a la pestaña de Elastic Beanstalk**
+   11. Click en el ícono de **refresh (🔄)** junto al dropdown
+   12. Selecciona el perfil que acabas de crear: `aws-elasticbeanstalk-ec2-role`
+   
+   **Opción B: Si ya tienes un perfil**:
+   - Click en el ícono de **refresh (🔄)** para actualizar la lista
+   - Selecciona un perfil existente que tenga las políticas necesarias
+   
+   #### 5.3 EC2 key pair (Opcional)
+   
+   Este campo es **opcional**. Te permite conectarte por SSH a las instancias EC2.
+   
+   - Si quieres conectarte por SSH: Selecciona un key pair existente o crea uno nuevo en EC2
+   - Si no necesitas SSH: Déjalo en blanco (no afecta el despliegue)
+   
+   ⚠️ **IMPORTANTE**: 
+   - Ambos roles (Service role y EC2 instance profile) son **obligatorios**
+   - Si no los configuras, verás errores en rojo y no podrás continuar
+   - Después de crear los roles, **siempre haz refresh (🔄)** para que aparezcan en el dropdown
+   
+   **Una vez configurados ambos roles, haz click en "Next"** para continuar.
+
+6. **Configurar variables de entorno**:
    ```
    NODE_ENV=production
    DATABASE_URL=postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
