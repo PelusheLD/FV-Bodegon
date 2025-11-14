@@ -337,7 +337,41 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    💡 **Tip**: Si no estás seguro, puedes dejar todo en valores por defecto y hacer click en "Next". Siempre puedes ajustar esto después en la configuración del entorno.
 
-7. **Configurar variables de entorno**:
+7. **Configurar instancias y escalado (Opcional)**:
+   
+   Este paso es **opcional** y puedes dejar la mayoría de valores en sus configuraciones por defecto.
+   
+   #### 7.1 Root volume (Almacenamiento del sistema)
+   
+   **Configuración recomendada (valores por defecto)**:
+   - **Root volume type**: "(Container default)" ✅ (déjalo así)
+   - **Size**: Déjalo en blanco o usa **8 GB** (mínimo recomendado)
+     - Para aplicaciones pequeñas: 8-10 GB es suficiente
+     - Para aplicaciones más grandes: 20-30 GB
+   - **IOPS**: `100` (ya está prellenado) ✅
+   - **Throughput**: `125 MiB/s` (ya está prellenado) ✅
+   
+   💡 **Nota**: Estos valores son suficientes para la mayoría de aplicaciones. Solo ajusta si tienes necesidades específicas de rendimiento.
+   
+   #### 7.2 Amazon CloudWatch monitoring
+   
+   **Configuración recomendada**:
+   - **Monitoring interval**: `5 minute` ✅ (ya está seleccionado)
+   - Esto permite monitorear el rendimiento de tus instancias
+   - 5 minutos es un buen balance entre detalle y costo
+   
+   #### 7.3 Instance metadata service (IMDS)
+   
+   **Configuración recomendada**:
+   - **IMDSv1**: Ya está desactivado (solo IMDSv2 habilitado) ✅
+   - Esto es más seguro y es la configuración recomendada por AWS
+   - No necesitas cambiar nada aquí
+   
+   **Una vez revisado (o si usas valores por defecto), haz click en "Next"** para continuar.
+   
+   💡 **Tip**: Para empezar, puedes dejar todo en valores por defecto. Estos ajustes son principalmente para optimización y pueden cambiarse después.
+
+8. **Configurar variables de entorno**:
    ```
    NODE_ENV=production
    DATABASE_URL=postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
@@ -347,13 +381,13 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    ⚠️ **Nota**: Si no ves este paso ahora, podrás configurarlo después en la configuración del entorno.
 
-8. **Revisar y crear**:
+9. **Revisar y crear**:
    - Click en **"Next"** hasta llegar al paso de **"Review"**
    - Revisa toda la configuración
    - Click en **"Create environment"**
    - Espera 5-10 minutos mientras se despliega
 
-9. **Obtener la URL del backend**:
+10. **Obtener la URL del backend**:
    - Una vez desplegado, obtendrás una URL como:
      ```
      http://fv-bodegon-backend-prod.xxxxxxxxxxxxx.us-east-1.elasticbeanstalk.com
