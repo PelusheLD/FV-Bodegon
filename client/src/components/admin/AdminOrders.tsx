@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Eye, Package, CheckCircle, XCircle, Clock, Truck } from "lucide-react";
+import { Eye, Package, CheckCircle, XCircle, Clock, Truck, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, OrderItem } from "@shared/schema";
@@ -118,6 +117,226 @@ export default function AdminOrders() {
     updateOrderStatusMutation.mutate({ id: orderId, status: newStatus });
   };
 
+  const handlePrintTicket = (order: Order) => {
+    // Crear una ventana nueva para imprimir
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const statusInfo = statusMap[order.status as keyof typeof statusMap] || statusMap.pending;
+    const paymentStatusMap: Record<string, string> = {
+      pending: 'No confirmado',
+      approved: 'Aprobado',
+      rejected: 'Rechazado',
+    };
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ticket de Pedido - ${order.customerName}</title>
+          <style>
+            @media print {
+              @page {
+                size: 80mm auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 10mm;
+              }
+            }
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              margin: 0;
+              padding: 10mm;
+              max-width: 80mm;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px dashed #000;
+              padding-bottom: 10px;
+              margin-bottom: 10px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 16px;
+              font-weight: bold;
+            }
+            .section {
+              margin: 10px 0;
+              padding: 5px 0;
+              border-bottom: 1px dashed #ccc;
+            }
+            .section:last-child {
+              border-bottom: none;
+            }
+            .section-title {
+              font-weight: bold;
+              font-size: 13px;
+              margin-bottom: 5px;
+              text-transform: uppercase;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin: 3px 0;
+            }
+            .label {
+              font-weight: bold;
+            }
+            .value {
+              text-align: right;
+            }
+            .total {
+              font-size: 14px;
+              font-weight: bold;
+              margin-top: 10px;
+              padding-top: 10px;
+              border-top: 2px dashed #000;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 15px;
+              padding-top: 10px;
+              border-top: 1px dashed #ccc;
+              font-size: 10px;
+            }
+            .status-badge {
+              display: inline-block;
+              padding: 2px 8px;
+              border-radius: 3px;
+              font-size: 11px;
+              font-weight: bold;
+            }
+            .status-pending { background: #fef3c7; }
+            .status-approved { background: #d1fae5; }
+            .status-rejected { background: #fee2e2; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>FV FARMACIA</h1>
+            <p>Ticket de Pedido</p>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Datos del Cliente</div>
+            <div class="row">
+              <span class="label">Nombre:</span>
+              <span class="value">${order.customerName}</span>
+            </div>
+            <div class="row">
+              <span class="label">Teléfono:</span>
+              <span class="value">${order.customerPhone}</span>
+            </div>
+            ${order.customerEmail ? `
+            <div class="row">
+              <span class="label">Email:</span>
+              <span class="value">${order.customerEmail}</span>
+            </div>
+            ` : ''}
+            ${order.customerAddress ? `
+            <div class="row">
+              <span class="label">Dirección:</span>
+              <span class="value">${order.customerAddress}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="section">
+            <div class="section-title">Información del Pedido</div>
+            <div class="row">
+              <span class="label">Fecha:</span>
+              <span class="value">${new Date(order.createdAt).toLocaleString('es-ES')}</span>
+            </div>
+            <div class="row">
+              <span class="label">Estado:</span>
+              <span class="value">${statusInfo.label}</span>
+            </div>
+            <div class="row">
+              <span class="label">ID Pedido:</span>
+              <span class="value">${order.id.substring(0, 8)}...</span>
+            </div>
+          </div>
+
+          ${(order.paymentBank || order.paymentCI || order.paymentPhone) ? `
+          <div class="section">
+            <div class="section-title">Datos de Pago</div>
+            ${order.paymentBank ? `
+            <div class="row">
+              <span class="label">Banco:</span>
+              <span class="value">${getBankName(order.paymentBank)}</span>
+            </div>
+            ` : ''}
+            ${order.paymentCI ? `
+            <div class="row">
+              <span class="label">Documento:</span>
+              <span class="value">${order.paymentCI}</span>
+            </div>
+            ` : ''}
+            ${order.paymentPhone ? `
+            <div class="row">
+              <span class="label">Teléfono:</span>
+              <span class="value">${order.paymentPhone}</span>
+            </div>
+            ` : ''}
+            <div class="row">
+              <span class="label">Estado de Pago:</span>
+              <span class="value">
+                <span class="status-badge status-${order.paymentStatus || 'pending'}">
+                  ${paymentStatusMap[order.paymentStatus || 'pending']}
+                </span>
+              </span>
+            </div>
+          </div>
+          ` : ''}
+
+          ${order.notes ? `
+          <div class="section">
+            <div class="section-title">Notas</div>
+            <p>${order.notes}</p>
+          </div>
+          ` : ''}
+
+          <div class="section total">
+            <div class="row">
+              <span>Total en USD:</span>
+              <span>$${parseFloat(order.total).toFixed(2)}</span>
+            </div>
+            ${order.totalInBolivares ? `
+            <div class="row">
+              <span>Total en Bs.:</span>
+              <span>Bs. ${parseFloat(order.totalInBolivares).toLocaleString('es-VE', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+              })}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="footer">
+            <p>Gracias por su compra</p>
+            <p>${new Date().toLocaleString('es-ES')}</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Esperar a que se cargue el contenido y luego imprimir
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+        // Cerrar la ventana después de imprimir (opcional)
+        // printWindow.close();
+      }, 250);
+    };
+  };
+
   if (isLoading) {
     return <div className="p-8 text-center">Cargando pedidos...</div>;
   }
@@ -179,7 +398,7 @@ export default function AdminOrders() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Select
                       value={order.status}
                       onValueChange={(value) => handleStatusChange(order.id, value)}
@@ -196,6 +415,15 @@ export default function AdminOrders() {
                         <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePrintTicket(order)}
+                      title="Imprimir ticket del cliente"
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Imprimir
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
