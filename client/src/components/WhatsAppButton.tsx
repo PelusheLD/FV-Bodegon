@@ -48,7 +48,7 @@ export default function WhatsAppButton() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50" style={{ marginRight: '80px' }}>
+    <div className="fixed bottom-6 right-6 z-50">
       {/* Tooltip */}
       {isHovered && (
         <div className="absolute bottom-full right-0 mb-3 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
