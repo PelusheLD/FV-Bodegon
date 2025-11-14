@@ -371,7 +371,56 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    💡 **Tip**: Para empezar, puedes dejar todo en valores por defecto. Estos ajustes son principalmente para optimización y pueden cambiarse después.
 
-8. **Configurar variables de entorno**:
+8. **Configurar monitoreo y logging (Opcional)**:
+   
+   Este paso es **opcional** pero **recomendado** para tener visibilidad de tu aplicación en producción.
+   
+   #### 8.1 Health reporting (Reporte de salud)
+   
+   **Configuración recomendada**:
+   - ✅ **"Enhanced"** (ya está seleccionado por defecto)
+   - Proporciona monitoreo en tiempo real de la aplicación y el sistema operativo
+   - Incluye la métrica `EnvironmentHealth` de forma gratuita
+   - Te permite ver el estado de salud de tu entorno en la consola
+   - ⚠️ **No selecciones "Basic"** a menos que tengas una razón específica
+   
+   #### 8.2 CloudWatch Custom Metrics (Métricas personalizadas)
+   
+   **Configuración recomendada**:
+   - **Instance metrics**: Déjalo en "Choose metrics" (sin seleccionar nada) ✅
+   - **Environment metrics**: Déjalo en "Choose metrics" (sin seleccionar nada) ✅
+   - 💡 **Nota**: Las métricas personalizadas tienen costos adicionales. Para empezar, no necesitas configurarlas.
+   - Puedes agregarlas después si necesitas monitoreo más detallado
+   
+   #### 8.3 Health event streaming to CloudWatch Logs
+   
+   **Configuración recomendada (Opcional)**:
+   - Puedes dejarlo deshabilitado para empezar
+   - Si quieres guardar eventos de salud en CloudWatch Logs:
+     - Habilita esta opción
+     - Configura la retención (máximo 10 años)
+     - ⚠️ **Nota**: CloudWatch Logs tiene costos por almacenamiento
+   
+   #### 8.4 Log streaming (Streaming de logs)
+   
+   **Configuración recomendada**:
+   - ✅ **Marca la casilla "Enable"** (recomendado)
+   - Esto permite ver los logs de tu aplicación en tiempo real en CloudWatch Logs
+   - Muy útil para debugging y monitoreo
+   - ⚠️ **Nota**: CloudWatch Logs tiene costos, pero para una aplicación pequeña son mínimos
+   - Si prefieres ahorrar costos inicialmente, puedes dejarlo deshabilitado y habilitarlo cuando necesites debuggear
+   
+   **Resumen de configuración recomendada**:
+   - ✅ Health reporting: **Enhanced** (ya seleccionado)
+   - ✅ CloudWatch Custom Metrics: **Sin configurar** (dejar en "Choose metrics")
+   - ⚠️ Health event streaming: **Opcional** (puedes dejarlo deshabilitado)
+   - ✅ Log streaming: **Habilitar** (recomendado para debugging)
+   
+   **Una vez configurado, haz click en "Next"** para continuar.
+   
+   💡 **Tip**: Para empezar, puedes usar la configuración mínima (Enhanced health + Log streaming habilitado). Siempre puedes agregar más monitoreo después.
+
+9. **Configurar variables de entorno**:
    ```
    NODE_ENV=production
    DATABASE_URL=postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
@@ -381,13 +430,13 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    ⚠️ **Nota**: Si no ves este paso ahora, podrás configurarlo después en la configuración del entorno.
 
-9. **Revisar y crear**:
+10. **Revisar y crear**:
    - Click en **"Next"** hasta llegar al paso de **"Review"**
    - Revisa toda la configuración
    - Click en **"Create environment"**
    - Espera 5-10 minutos mientras se despliega
 
-10. **Obtener la URL del backend**:
+11. **Obtener la URL del backend**:
    - Una vez desplegado, obtendrás una URL como:
      ```
      http://fv-bodegon-backend-prod.xxxxxxxxxxxxx.us-east-1.elasticbeanstalk.com
