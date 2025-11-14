@@ -420,7 +420,11 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    
    💡 **Tip**: Para empezar, puedes usar la configuración mínima (Enhanced health + Log streaming habilitado). Siempre puedes agregar más monitoreo después.
 
-9. **Configurar variables de entorno**:
+9. **Configurar variables de entorno (Opcional en este paso)**:
+   
+   ⚠️ **Nota**: Este paso puede no aparecer en el wizard. Si no lo ves, no te preocupes. Puedes configurar las variables de entorno **después** de crear el entorno (ver paso 11).
+   
+   Si aparece un paso para configurar variables de entorno, puedes agregar:
    ```
    NODE_ENV=production
    DATABASE_URL=postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
@@ -428,15 +432,96 @@ El backend ya está preparado, pero necesitamos crear un archivo de configuraci�
    PORT=8080
    ```
    
-   ⚠️ **Nota**: Si no ves este paso ahora, podrás configurarlo después en la configuración del entorno.
+   ⚠️ **Reemplaza**:
+   - `TU_PASSWORD` con la contraseña real de tu base de datos RDS
+   - `fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com` con el endpoint real de tu RDS
+   - `genera-un-secreto-seguro-aqui` con un secreto seguro
 
-10. **Revisar y crear**:
-   - Click en **"Next"** hasta llegar al paso de **"Review"**
-   - Revisa toda la configuración
-   - Click en **"Create environment"**
-   - Espera 5-10 minutos mientras se despliega
+10. **Revisar configuración (Review)**:
+   
+   Este es el último paso antes de crear el entorno. Revisa toda la configuración:
+   
+   #### 10.1 Verificar información del entorno
+   
+   Revisa que todo esté correcto:
+   - ✅ **Environment tier**: "Web server environment" (debe ser este, no "Worker environment")
+   - ✅ **Environment name**: `fv-bodegon-backend-prod` (o el que hayas elegido)
+   - ✅ **Platform**: "Node.js 20 running on 64bit Amazon Linux 2023" (o similar)
+   - ✅ **Application name**: `fv-bodegon` (o el que hayas elegido)
+   - ✅ **Application code**: Debe mostrar el nombre de tu archivo ZIP (ej: `backend-eb-fv-bodegon-backend-20251113-192631.zip`)
+   
+   #### 10.2 Verificar acceso del servicio
+   
+   Revisa que los roles estén configurados:
+   - ✅ **Service role**: Debe mostrar un ARN (ej: `arn:aws:iam::...:role/aws-elasticbeanstalk-service-role`)
+   - ✅ **EC2 instance profile**: Debe mostrar el nombre del perfil (ej: `aws-elasticbeanstalk-ec2-role`)
+   
+   #### 10.3 Revisar otros pasos (si los configuraste)
+   
+   Si configuraste los pasos opcionales, revisa:
+   - Networking (VPC, Public IP, etc.)
+   - Instance settings (Root volume, monitoring, etc.)
+   - Monitoring y logging
+   
+   #### 10.4 Editar configuración (si es necesario)
+   
+   Si necesitas cambiar algo:
+   - Haz click en el botón **"Edit"** junto a cualquier sección
+   - Esto te llevará de vuelta a ese paso para hacer cambios
+   - Luego vuelve al paso de Review
+   
+   #### 10.5 Crear el entorno
+   
+   Una vez que todo esté correcto:
+   1. **Haz scroll hacia abajo** para ver todas las secciones
+   2. Revisa que no haya advertencias o errores
+   3. Haz click en el botón **"Create environment"** (naranja, en la parte inferior)
+   4. ⏳ **Espera 5-10 minutos** mientras Elastic Beanstalk:
+      - Crea las instancias EC2
+      - Instala Node.js y dependencias
+      - Despliega tu aplicación
+      - Configura el balanceador de carga
+   
+   ⚠️ **IMPORTANTE**: 
+   - **NO cierres la pestaña** durante el despliegue
+   - Verás el progreso en tiempo real
+   - El estado cambiará de "Launching" a "Updating" y finalmente a "Ok" (verde)
+   - Si hay errores, aparecerán en la sección de "Events"
+   
+   💡 **Nota**: Después de crear el entorno, necesitarás configurar las variables de entorno (ver paso siguiente).
 
-11. **Obtener la URL del backend**:
+11. **Configurar variables de entorno (Después del despliegue)**:
+
+   Una vez que el entorno esté desplegado (estado "Ok" en verde):
+   
+   1. **Ve a la configuración del entorno**:
+      - En la consola de Elastic Beanstalk, selecciona tu entorno
+      - En el menú izquierdo, haz click en **"Configuration"**
+      - Busca la sección **"Software"** y haz click en **"Edit"**
+   
+   2. **Agrega las variables de entorno**:
+      - Haz scroll hasta la sección **"Environment properties"**
+      - Haz click en **"Add environment property"** para cada variable:
+      
+      ```
+      NODE_ENV = production
+      DATABASE_URL = postgresql://postgres:TU_PASSWORD@fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com:5432/fv_bodegon
+      SESSION_SECRET = genera-un-secreto-seguro-aqui
+      PORT = 8080
+      ```
+      
+      ⚠️ **Reemplaza**:
+      - `TU_PASSWORD` con la contraseña real de tu base de datos RDS
+      - `fv-bodegon-db.xxxxxxxxxxxxx.us-east-1.rds.amazonaws.com` con el endpoint real de tu RDS
+      - `genera-un-secreto-seguro-aqui` con un secreto seguro (puedes generar uno con: `openssl rand -base64 32`)
+   
+   3. **Aplicar cambios**:
+      - Haz click en **"Apply"** al final de la página
+      - Espera 2-3 minutos mientras se reinician las instancias con las nuevas variables
+   
+   ⚠️ **Nota**: Si prefieres configurar las variables antes del despliegue, puedes hacerlo en el paso 9, pero es más fácil hacerlo después cuando el entorno ya está creado.
+
+12. **Obtener la URL del backend**:
    - Una vez desplegado, obtendrás una URL como:
      ```
      http://fv-bodegon-backend-prod.xxxxxxxxxxxxx.us-east-1.elasticbeanstalk.com
