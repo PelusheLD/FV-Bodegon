@@ -137,36 +137,40 @@ export default function AdminOrders() {
           <style>
             @media print {
               @page {
-                size: 80mm auto;
+                size: 58mm auto;
                 margin: 0;
               }
               body {
                 margin: 0;
-                padding: 10mm;
+                padding: 5mm;
               }
             }
             body {
               font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.4;
+              font-size: 11px;
+              line-height: 1.3;
               margin: 0;
-              padding: 10mm;
-              max-width: 80mm;
+              padding: 5mm;
+              max-width: 58mm;
             }
             .header {
               text-align: center;
               border-bottom: 2px dashed #000;
-              padding-bottom: 10px;
-              margin-bottom: 10px;
+              padding-bottom: 8px;
+              margin-bottom: 8px;
             }
             .header h1 {
               margin: 0;
-              font-size: 16px;
+              font-size: 14px;
               font-weight: bold;
             }
+            .header p {
+              margin: 2px 0 0 0;
+              font-size: 10px;
+            }
             .section {
-              margin: 10px 0;
-              padding: 5px 0;
+              margin: 8px 0;
+              padding: 4px 0;
               border-bottom: 1px dashed #ccc;
             }
             .section:last-child {
@@ -174,40 +178,42 @@ export default function AdminOrders() {
             }
             .section-title {
               font-weight: bold;
-              font-size: 13px;
-              margin-bottom: 5px;
+              font-size: 11px;
+              margin-bottom: 4px;
               text-transform: uppercase;
             }
             .row {
               display: flex;
               justify-content: space-between;
-              margin: 3px 0;
+              margin: 2px 0;
+              font-size: 10px;
             }
             .label {
               font-weight: bold;
             }
             .value {
               text-align: right;
+              word-break: break-word;
             }
             .total {
-              font-size: 14px;
+              font-size: 12px;
               font-weight: bold;
-              margin-top: 10px;
-              padding-top: 10px;
+              margin-top: 8px;
+              padding-top: 8px;
               border-top: 2px dashed #000;
             }
             .footer {
               text-align: center;
-              margin-top: 15px;
-              padding-top: 10px;
+              margin-top: 10px;
+              padding-top: 8px;
               border-top: 1px dashed #ccc;
-              font-size: 10px;
+              font-size: 9px;
             }
             .status-badge {
               display: inline-block;
-              padding: 2px 8px;
-              border-radius: 3px;
-              font-size: 11px;
+              padding: 1px 6px;
+              border-radius: 2px;
+              font-size: 9px;
               font-weight: bold;
             }
             .status-pending { background: #fef3c7; }
